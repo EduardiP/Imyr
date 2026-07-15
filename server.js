@@ -1,6 +1,7 @@
-// Imyr — server bazë (Faza 1)
+// Imyr — server (Faza 1 + fillimi i Fazes 2)
 // Rrjet cross-promotion per biznese.
 // Faza 1: server + databaza + login i sigurt (regjistrim/hyrje).
+// Faza 2 (fillim): snippet-i (widget.js), /ad, /track, ruajtja e promovimit, statusi i lidhjes.
 
 const express = require('express');
 const { Pool } = require('pg');
@@ -31,7 +32,7 @@ async function initDB() {
       kategoria TEXT,                  -- kategoria e biznesit
       plani TEXT DEFAULT 'falas',      -- falas | plan1 | plan2 ...
       website TEXT,                    -- faqja e biznesit
-      celes TEXT UNIQUE                -- celesi unik per snippet-in (Faza 2)
+      celes TEXT UNIQUE                -- celesi unik per snippet-in
     );
   `);
   await pool.query(`
@@ -54,12 +55,36 @@ async function initDB() {
       created_at TIMESTAMPTZ DEFAULT now()
     );
   `);
+
+  // --- Faza 2: kolona shtese per lidhjen/gjurmimin (shtohen vetem nese s'ekzistojne) ---
+  await pool.query(`ALTER TABLE bizneset ADD COLUMN IF NOT EXISTS snippet_active BOOLEAN DEFAULT false`);
+  await pool.query(`ALTER TABLE bizneset ADD COLUMN IF NOT EXISTS first_seen_at TIMESTAMPTZ`);
+  await pool.query(`ALTER TABLE bizneset ADD COLUMN IF NOT EXISTS origjina TEXT`);
+
+  // Ngjarjet (shfaqje/klikime) — per gjurmimin
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS ngjarjet (
+      id SERIAL PRIMARY KEY,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      biznes_id INT REFERENCES bizneset(id) ON DELETE CASCADE,
+      lloji TEXT,        -- 'view' | 'click'
+      origjina TEXT
+    );
+  `);
+
   console.log('DB gati.');
 }
 
 // --- Ndihmes: krijo nje celes unik ---
 function beCeles() {
   return 'imyr_' + crypto.randomBytes(12).toString('hex');
+}
+
+// --- Ndihmes: CORS per endpoint-et publike (thirren nga dyqane te tjera) ---
+function cors(res) {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
 }
 
 // --- Middleware: kontrollo a eshte i loguar ---
@@ -137,6 +162,114 @@ app.get('/api/une', iLoguar, async (req, res) => {
       'SELECT id, emri, email, kategoria, plani, website, celes FROM bizneset WHERE id=$1', [req.biznesId]);
     res.json(r.rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// --- RUAJ PROMOVIMIN (teksti qe do shfaqet ne snippet) ---
+app.post('/api/promovimi', iLoguar, async (req, res) => {
+  const teksti = (req.body.teksti || '').trim();
+  if (!teksti) return res.status(400).json({ error: 'Shkruaj tekstin e promovimit.' });
+  try {
+    // per tani: nje promovim aktiv per biznes
+    await pool.query('DELETE FROM promovimet WHERE biznes_id=$1', [req.biznesId]);
+    await pool.query(
+      'INSERT INTO promovimet (biznes_id, teksti, aktiv) VALUES ($1,$2,true)',
+      [req.biznesId, teksti]
+    );
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// --- STATUSI (a u lidh snippet-i te dyqani) ---
+app.get('/api/status', iLoguar, async (req, res) => {
+  try {
+    const b = await pool.query('SELECT snippet_active, origjina FROM bizneset WHERE id=$1', [req.biznesId]);
+    const p = await pool.query('SELECT teksti FROM promovimet WHERE biznes_id=$1 ORDER BY id DESC LIMIT 1', [req.biznesId]);
+    res.json({
+      active: b.rows[0] ? !!b.rows[0].snippet_active : false,
+      origjina: b.rows[0] ? b.rows[0].origjina : null,
+      teksti: p.rows.length ? p.rows[0].teksti : null
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// --- WIDGET.JS (snippet-i qe vendoset te dyqani) ---
+app.get('/widget.js', (req, res) => {
+  res.type('application/javascript');
+  res.send(`(function(){
+  var s = document.currentScript;
+  var key = s ? s.getAttribute('data-key') : null;
+  var base = s ? new URL(s.src).origin : '';
+  function esc(t){ var d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+  function run(){
+    var slot = document.getElementById('imyr-slot');
+    if(!slot || !key) return;
+    fetch(base + '/ad?key=' + encodeURIComponent(key))
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(d && d.teksti){
+          slot.innerHTML = '<div style="border:1px solid #e2c68a;background:#fbf6ea;color:#5a4a24;'
+            + 'padding:12px 14px;border-radius:10px;font:14px/1.5 system-ui,sans-serif;cursor:pointer;">'
+            + esc(d.teksti) + '</div>';
+          try {
+            var u = base + '/track?key=' + encodeURIComponent(key) + '&event=view';
+            navigator.sendBeacon ? navigator.sendBeacon(u) : fetch(u);
+          } catch(e){}
+          slot.addEventListener('click', function(){
+            try { fetch(base + '/track?key=' + encodeURIComponent(key) + '&event=click'); } catch(e){}
+          });
+        }
+      })
+      .catch(function(){});
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+  else run();
+})();`);
+});
+
+// --- AD (kthen permbajtjen + shenon lidhjen ne kerkesen e pare) ---
+app.get('/ad', async (req, res) => {
+  cors(res);
+  const key = req.query.key;
+  if (!key) return res.json({ teksti: null });
+  try {
+    const b = await pool.query('SELECT id, snippet_active FROM bizneset WHERE celes=$1', [key]);
+    if (!b.rows.length) return res.json({ teksti: null });
+    const bizId = b.rows[0].id;
+    const origin = req.headers.origin || req.headers.referer || null;
+
+    // Shenim i lidhjes ne kerkesen e pare (sinjali qe snippet-i u instalua)
+    if (!b.rows[0].snippet_active) {
+      await pool.query(
+        'UPDATE bizneset SET snippet_active=true, first_seen_at=now(), origjina=$2 WHERE id=$1',
+        [bizId, origin]
+      );
+    }
+
+    // Per tani: shfaq tekstin e vet biznesit (per testim).
+    // Me vone: kjo zevendesohet nga selector-i qe zgjedh promovimin e nje biznesi TJETER.
+    const p = await pool.query(
+      'SELECT teksti FROM promovimet WHERE biznes_id=$1 AND aktiv=true ORDER BY id DESC LIMIT 1', [bizId]);
+    res.json({ teksti: p.rows.length ? p.rows[0].teksti : null });
+  } catch (e) {
+    res.json({ teksti: null });
+  }
+});
+
+// --- TRACK (shfaqje/klikime) ---
+app.get('/track', async (req, res) => {
+  cors(res);
+  const key = req.query.key;
+  const lloji = req.query.event === 'click' ? 'click' : 'view';
+  try {
+    const b = await pool.query('SELECT id FROM bizneset WHERE celes=$1', [key]);
+    if (b.rows.length) {
+      await pool.query(
+        'INSERT INTO ngjarjet (biznes_id, lloji, origjina) VALUES ($1,$2,$3)',
+        [b.rows[0].id, lloji, req.headers.origin || req.headers.referer || null]
+      );
+    }
+  } catch (e) {}
+  res.status(204).end();
 });
 
 // --- Faqet ---

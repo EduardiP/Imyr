@@ -9,6 +9,8 @@ const bcrypt = require('bcryptjs');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
 const path = require('path');
+const https = require('https');
+const http = require('http');
 
 const app = express();
 app.use(express.json());
@@ -198,6 +200,92 @@ app.get('/api/status', iLoguar, async (req, res) => {
       last_seen_at: row.last_seen_at || null,
       teksti: p.rows.length ? p.rows[0].teksti : null
     });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// --- Ndihmes: merr HTML-in e nje faqeje (server-ane, pa varesi shtese) ---
+function merrFaqen(url, thellesia = 0) {
+  return new Promise((resolve, reject) => {
+    if (thellesia > 4) return reject(new Error('shume ridrejtime'));
+    const lib = url.startsWith('https') ? https : http;
+    const kerkesa = lib.get(url, { headers: { 'User-Agent': 'ImyrBot/1.0' } }, resp => {
+      if ([301,302,303,307,308].includes(resp.statusCode) && resp.headers.location) {
+        resp.resume();
+        return resolve(merrFaqen(new URL(resp.headers.location, url).toString(), thellesia + 1));
+      }
+      let data = '';
+      resp.on('data', c => { data += c; if (data.length > 2000000) resp.destroy(); });
+      resp.on('end', () => resolve(data));
+    });
+    kerkesa.on('error', reject);
+    kerkesa.setTimeout(8000, () => kerkesa.destroy(new Error('koha skadoi')));
+  });
+}
+
+// --- VERIFIKO (server-ane): a eshte kodi i vendosur te faqja? (pa vizitore) ---
+app.post('/api/verifiko', iLoguar, async (req, res) => {
+  try {
+    const biz = await pool.query('SELECT celes, website FROM bizneset WHERE id=$1', [req.biznesId]);
+    if (!biz.rows.length) return res.status(400).json({ error: 'Biznes i panjohur.' });
+    const celes = biz.rows[0].celes;
+    let url = (req.body.url || biz.rows[0].website || '').trim();
+    if (!url) return res.status(400).json({ error: 'Jep URL-ne e faqes ku e vendose kodin.' });
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+    let html = '';
+    try { html = await merrFaqen(url); }
+    catch (e) { return res.json({ found: false, error: "S'u arrit faqja: " + e.message, url }); }
+
+    const found = html.includes(celes); // celes-i shfaqet te data-key i snippet-it
+    if (found) {
+      await pool.query(
+        `UPDATE bizneset SET snippet_active=true,
+           first_seen_at=COALESCE(first_seen_at, now()),
+           last_seen_at=now(), origjina=$2 WHERE id=$1`,
+        [req.biznesId, url]
+      );
+    }
+    res.json({ found, url });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// --- KONTROLLO (auto): kontrollon vete faqen e regjistruar, pa vizitore ---
+const kontrolliFundit = new Map(); // biznes_id -> timestamp (throttle)
+app.get('/api/kontrollo', iLoguar, async (req, res) => {
+  try {
+    const b = await pool.query(
+      'SELECT celes, website, snippet_active, origjina, last_seen_at FROM bizneset WHERE id=$1', [req.biznesId]);
+    if (!b.rows.length) return res.status(400).json({ error: 'Biznes i panjohur.' });
+    const row = b.rows[0];
+    const lastSeen = row.last_seen_at ? new Date(row.last_seen_at).getTime() : 0;
+    const live = lastSeen > 0 && (Date.now() - lastSeen) < DRITARJA_LIVE_MS;
+
+    // Nese eshte tashme i lidhur, kthe statusin (mos e ngarko faqen kot).
+    if (row.snippet_active) {
+      return res.json({ active: true, live, origjina: row.origjina || null });
+    }
+
+    let url = (row.website || '').trim();
+    if (!url) return res.json({ active: false, live: false, siteMissing: true });
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+    // Throttle: nje ngarkim faqeje cdo 5s per biznes (edhe nese frontend-i pyet me shpesh).
+    const tani = Date.now();
+    if (tani - (kontrolliFundit.get(req.biznesId) || 0) >= 5000) {
+      kontrolliFundit.set(req.biznesId, tani);
+      try {
+        const html = await merrFaqen(url);
+        if (html.includes(row.celes)) {
+          await pool.query(
+            `UPDATE bizneset SET snippet_active=true,
+               first_seen_at=COALESCE(first_seen_at, now()),
+               last_seen_at=now(), origjina=$2 WHERE id=$1`,
+            [req.biznesId, url]);
+          return res.json({ active: true, live: true, origjina: url });
+        }
+      } catch (e) { /* faqja s'u arrit — ende pa lidhur */ }
+    }
+    res.json({ active: false, live: false, url });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

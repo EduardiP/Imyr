@@ -59,6 +59,7 @@ async function initDB() {
   // --- Faza 2: kolona shtese per lidhjen/gjurmimin (shtohen vetem nese s'ekzistojne) ---
   await pool.query(`ALTER TABLE bizneset ADD COLUMN IF NOT EXISTS snippet_active BOOLEAN DEFAULT false`);
   await pool.query(`ALTER TABLE bizneset ADD COLUMN IF NOT EXISTS first_seen_at TIMESTAMPTZ`);
+  await pool.query(`ALTER TABLE bizneset ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE bizneset ADD COLUMN IF NOT EXISTS origjina TEXT`);
 
   // Ngjarjet (shfaqje/klikime) — per gjurmimin
@@ -180,13 +181,21 @@ app.post('/api/promovimi', iLoguar, async (req, res) => {
 });
 
 // --- STATUSI (a u lidh snippet-i te dyqani) ---
+// Dritarja e "gjalle": nese e kemi pare snippet-in brenda kesaj kohe, quhet aktiv tani.
+const DRITARJA_LIVE_MS = 10 * 60 * 1000; // 10 minuta
 app.get('/api/status', iLoguar, async (req, res) => {
   try {
-    const b = await pool.query('SELECT snippet_active, origjina FROM bizneset WHERE id=$1', [req.biznesId]);
+    const b = await pool.query(
+      'SELECT snippet_active, origjina, last_seen_at FROM bizneset WHERE id=$1', [req.biznesId]);
     const p = await pool.query('SELECT teksti FROM promovimet WHERE biznes_id=$1 ORDER BY id DESC LIMIT 1', [req.biznesId]);
+    const row = b.rows[0] || {};
+    const lastSeen = row.last_seen_at ? new Date(row.last_seen_at).getTime() : 0;
+    const live = lastSeen > 0 && (Date.now() - lastSeen) < DRITARJA_LIVE_MS;
     res.json({
-      active: b.rows[0] ? !!b.rows[0].snippet_active : false,
-      origjina: b.rows[0] ? b.rows[0].origjina : null,
+      active: !!row.snippet_active,             // a u lidh ndonjehere (kerkese reale, jo preview)
+      live: live,                               // a po e shohim tani (i fresket)
+      origjina: row.origjina || null,
+      last_seen_at: row.last_seen_at || null,
       teksti: p.rows.length ? p.rows[0].teksti : null
     });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -199,22 +208,28 @@ app.get('/widget.js', (req, res) => {
   var s = document.currentScript;
   var key = s ? s.getAttribute('data-key') : null;
   var base = s ? new URL(s.src).origin : '';
+  // Preview i Shopify (editori): shfaqe reklamen, por MOS e numero si lidhje reale.
+  var preview = !!(window.Shopify && window.Shopify.designMode);
+  var pq = preview ? '&preview=1' : '';
   function esc(t){ var d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
   function run(){
     var slot = document.getElementById('imyr-slot');
     if(!slot || !key) return;
-    fetch(base + '/ad?key=' + encodeURIComponent(key))
+    fetch(base + '/ad?key=' + encodeURIComponent(key) + pq)
       .then(function(r){ return r.json(); })
       .then(function(d){
         if(d && d.teksti){
           slot.innerHTML = '<div style="border:1px solid #e2c68a;background:#fbf6ea;color:#5a4a24;'
             + 'padding:12px 14px;border-radius:10px;font:14px/1.5 system-ui,sans-serif;cursor:pointer;">'
             + esc(d.teksti) + '</div>';
-          try {
-            var u = base + '/track?key=' + encodeURIComponent(key) + '&event=view';
-            navigator.sendBeacon ? navigator.sendBeacon(u) : fetch(u);
-          } catch(e){}
+          if(!preview){
+            try {
+              var u = base + '/track?key=' + encodeURIComponent(key) + '&event=view';
+              navigator.sendBeacon ? navigator.sendBeacon(u) : fetch(u);
+            } catch(e){}
+          }
           slot.addEventListener('click', function(){
+            if(preview) return;
             try { fetch(base + '/track?key=' + encodeURIComponent(key) + '&event=click'); } catch(e){}
           });
         }
@@ -231,18 +246,25 @@ app.get('/ad', async (req, res) => {
   cors(res);
   const key = req.query.key;
   if (!key) return res.json({ teksti: null });
+  const preview = req.query.preview === '1';
   try {
     const b = await pool.query('SELECT id, snippet_active FROM bizneset WHERE celes=$1', [key]);
     if (!b.rows.length) return res.json({ teksti: null });
     const bizId = b.rows[0].id;
     const origin = req.headers.origin || req.headers.referer || null;
 
-    // Shenim i lidhjes ne kerkesen e pare (sinjali qe snippet-i u instalua)
-    if (!b.rows[0].snippet_active) {
-      await pool.query(
-        'UPDATE bizneset SET snippet_active=true, first_seen_at=now(), origjina=$2 WHERE id=$1',
-        [bizId, origin]
-      );
+    // VETEM per kerkesa reale (jo preview i Shopify): sheno lidhjen + heartbeat.
+    if (!preview) {
+      if (!b.rows[0].snippet_active) {
+        // kerkesa e pare reale: shenim i lidhjes
+        await pool.query(
+          'UPDATE bizneset SET snippet_active=true, first_seen_at=now(), last_seen_at=now(), origjina=$2 WHERE id=$1',
+          [bizId, origin]
+        );
+      } else {
+        // heartbeat: e pame perseri tani (per statusin "live")
+        await pool.query('UPDATE bizneset SET last_seen_at=now() WHERE id=$1', [bizId]);
+      }
     }
 
     // Per tani: shfaq tekstin e vet biznesit (per testim).
@@ -258,6 +280,7 @@ app.get('/ad', async (req, res) => {
 // --- TRACK (shfaqje/klikime) ---
 app.get('/track', async (req, res) => {
   cors(res);
+  if (req.query.preview === '1') return res.status(204).end(); // injoro preview-in
   const key = req.query.key;
   const lloji = req.query.event === 'click' ? 'click' : 'view';
   try {

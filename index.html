@@ -102,17 +102,25 @@
         <button class="btn" id="copyBtn" onclick="kopjo()">Kopjo</button>
         <button class="btn ghost" onclick="ndrysho()">Ndrysho tekstin</button>
       </div>
-      <div class="status wait" id="statusLine">⏳ Në pritje për t'u lidhur…</div>
-      <div class="small" style="margin-top:8px;">Vendos <code>&lt;div id="imyr-slot"&gt;&lt;/div&gt;</code> aty ku do reklama, dhe kodin poshtë saj.</div>
+      <div class="status wait" id="statusLine">⏳ Po kontrolloj faqen tënde automatikisht… ruaj ndryshimin te SaaS-i.</div>
+      <div class="small" style="margin-top:8px;">Vendos <code>&lt;div id="imyr-slot"&gt;&lt;/div&gt;</code> aty ku do reklama, dhe kodin poshtë saj. Sapo ta ruash, Imyr e kap vetë — pa pasur nevojë ta hapë njeri.</div>
+
+      <!-- Fallback: vetem nese s'ka URL faqeje te regjistruar -->
+      <div id="manualVerify" class="hide" style="margin-top:12px;">
+        <label>URL-ja e faqes ku e vendose kodin</label>
+        <input id="verifyUrl" placeholder="https://faqja-ime.com">
+        <button class="btn cta" style="width:100%;margin-top:8px;" id="btnVerifiko" onclick="verifiko()">Verifiko lidhjen</button>
+        <div class="small" id="verifyMsg" style="margin-top:6px;"></div>
+      </div>
     </div>
 
     <!-- HAPI 3: sukses -->
     <div id="stepSuccess" class="hide success">
       <div class="tick">✓</div>
-      <h2>U lidh me sukses!</h2>
-      <p class="small">Faleminderit — snippet-i yt është lidhur dhe po shfaq përmbajtjen.</p>
+      <h2>U krijua me sukses!</h2>
+      <p class="small">Kodi u gjet dhe u lidh te faqja jote.</p>
+      <p class="small" id="okOrigin" style="color:var(--acc);"></p>
       <p class="small" id="liveBadge"></p>
-      <p class="small" id="okOrigin"></p>
     </div>
   </div>
 
@@ -223,14 +231,27 @@
     $('stepInput').classList.add('hide');
     $('stepCode').classList.add('hide');
     $('stepSuccess').classList.remove('hide');
-    $('okOrigin').textContent = st && st.origjina ? ('Lidhur nga: ' + st.origjina) : '';
+    $('okOrigin').textContent = st && st.origjina ? st.origjina : '';
     perditesoBadge(st);
   }
 
   function perditesoBadge(st){
     const el = $('liveBadge'); if(!el) return;
-    if (st && st.live) { el.textContent = '🟢 Aktiv tani'; el.style.color = 'var(--good)'; }
-    else { el.textContent = "🟡 S'po e shohim tani — rifresko faqen e dyqanit ku e vendose kodin"; el.style.color = 'var(--acc)'; }
+    if (st && st.live) { el.textContent = '🟢 Aktiv tani — po merr shikime'; el.style.color = 'var(--good)'; }
+    else { el.textContent = '✓ I instaluar (ende pa vizitorë tani)'; el.style.color = 'var(--mut)'; }
+  }
+
+  async function verifiko(){
+    const url = ($('verifyUrl').value || '').trim();
+    if(!url){ $('verifyMsg').textContent = 'Shkruaj URL-në e faqes.'; return; }
+    $('btnVerifiko').disabled = true;
+    $('verifyMsg').textContent = 'Po kontrolloj faqen…';
+    try {
+      const r = await (await fetch('/api/verifiko',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})})).json();
+      if (r.found) { trregoSukses({ origjina: r.url, live: true }); startPolling(); }
+      else { $('verifyMsg').textContent = r.error ? r.error : "S'u gjet kodi te ajo faqe. Sigurohu që e ruajte dhe që faqja s'është me fjalëkalim."; }
+    } catch(e){ $('verifyMsg').textContent = 'Gabim: ' + e.message; }
+    $('btnVerifiko').disabled = false;
   }
 
   async function gjenero(){
@@ -258,14 +279,21 @@
     setTimeout(()=>{ $('copyBtn').textContent='Kopjo'; }, 1500);
   }
 
+  async function njeKontroll(){
+    try {
+      const st = await (await fetch('/api/kontrollo')).json();
+      if (st.active) { trregoSukses(st); return; }
+      if (st.siteMissing) {
+        $('manualVerify').classList.remove('hide');
+        $('statusLine').textContent = 'Shto URL-në e faqes që Imyr ta kontrollojë vetë.';
+      }
+    } catch(e){}
+  }
+
   function startPolling(){
     if (pollTimer) clearInterval(pollTimer);
-    pollTimer = setInterval(async ()=>{
-      try {
-        const st = await (await fetch('/api/status')).json();
-        if (st.active) trregoSukses(st);   // u lidh ndonjehere (kerkese reale) → sukses + badge live
-      } catch(e){}
-    }, 4000);
+    njeKontroll();                              // kontroll i menjehershem
+    pollTimer = setInterval(njeKontroll, 6000); // pastaj cdo 6s
   }
 
   // Enter te textarea → gjenero (pa shift)

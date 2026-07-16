@@ -500,6 +500,7 @@ app.get('/track', async (req, res) => {
 
 // --- Faqet ---
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get('/test', (req, res) => res.sendFile(path.join(__dirname, 'index-test-saas.html')));
 
 // health check
 app.get('/health', (req, res) => res.json({ ok: true, koha: new Date().toISOString() }));

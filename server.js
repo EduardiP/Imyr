@@ -454,13 +454,12 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // health check
 app.get('/health', (req, res) => res.json({ ok: true, koha: new Date().toISOString() }));
-
+app.get('/test', (req, res) => res.sendFile(path.join(__dirname, 'index-test-saas.html')));
 const PORT = process.env.PORT || 3000;
 initDB()
   .then(() => app.listen(PORT, () => console.log('Imyr po punon ne portin ' + PORT)))
   .catch(e => {
     console.error('Gabim init DB:', e.message);
     // Nis serverin gjithsesi qe health check te punoje
-    app.get('/test', (req, res) => res.sendFile(path.join(__dirname, 'index-test-saas.html')));
     app.listen(PORT, () => console.log('Imyr (pa DB) ne portin ' + PORT));
   });

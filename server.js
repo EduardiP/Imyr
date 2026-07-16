@@ -347,6 +347,55 @@ app.get('/lidh', async (req, res) => {
   res.status(204).end();
 });
 
+// --- IMYR.JS (gjithcka ne nje rresht: lidhje + hapesire + reklame + gjurmim) ---
+app.get('/imyr.js', (req, res) => {
+  res.type('application/javascript');
+  res.send(`(function(){
+  var s = document.currentScript;
+  var key = s ? s.getAttribute('data-key') : null;
+  var base = s ? new URL(s.src).origin : '';
+  if(!key) return;
+  var preview = !!(window.Shopify && window.Shopify.designMode);
+
+  // 1) Sinjali i lidhjes (firon nga cdo faqe; jo ne preview)
+  if(!preview){
+    try { var u = base + '/lidh?key=' + encodeURIComponent(key);
+      navigator.sendBeacon ? navigator.sendBeacon(u) : fetch(u,{mode:'no-cors'}); } catch(e){}
+  }
+
+  function esc(t){ var d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+  function slotEl(){
+    var el = document.getElementById('imyr-slot');
+    if(el) return el;
+    el = document.createElement('div'); el.id = 'imyr-slot';
+    if(s && s.parentNode) s.parentNode.insertBefore(el, s.nextSibling);
+    else if(document.body) document.body.appendChild(el);
+    return el;
+  }
+  function run(){
+    var slot = slotEl(); if(!slot) return;
+    fetch(base + '/ad?key=' + encodeURIComponent(key) + (preview?'&preview=1':''))
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(d && d.teksti){
+          slot.innerHTML = '<div style="border:1px solid #e2c68a;background:#fbf6ea;color:#5a4a24;'
+            + 'padding:12px 14px;border-radius:10px;font:14px/1.5 system-ui,sans-serif;cursor:pointer;">'
+            + esc(d.teksti) + '</div>';
+          if(!preview){ try { var v = base + '/track?key=' + encodeURIComponent(key) + '&event=view';
+            navigator.sendBeacon ? navigator.sendBeacon(v) : fetch(v); } catch(e){} }
+          slot.addEventListener('click', function(){
+            if(preview) return;
+            try { fetch(base + '/track?key=' + encodeURIComponent(key) + '&event=click'); } catch(e){}
+          });
+        }
+      })
+      .catch(function(){});
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+  else run();
+})();`);
+});
+
 // --- WIDGET.JS (snippet-i qe vendoset te dyqani) ---
 app.get('/widget.js', (req, res) => {
   res.type('application/javascript');
@@ -454,7 +503,7 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // health check
 app.get('/health', (req, res) => res.json({ ok: true, koha: new Date().toISOString() }));
-app.get('/test', (req, res) => res.sendFile(path.join(__dirname, 'index-test-saas.html')));
+
 const PORT = process.env.PORT || 3000;
 initDB()
   .then(() => app.listen(PORT, () => console.log('Imyr po punon ne portin ' + PORT)))

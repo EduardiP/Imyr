@@ -461,5 +461,6 @@ initDB()
   .catch(e => {
     console.error('Gabim init DB:', e.message);
     // Nis serverin gjithsesi qe health check te punoje
+    app.get('/test', (req, res) => res.sendFile(path.join(__dirname, 'index-test-saas.html')));
     app.listen(PORT, () => console.log('Imyr (pa DB) ne portin ' + PORT));
   });

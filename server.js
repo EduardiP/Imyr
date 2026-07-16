@@ -63,6 +63,7 @@ async function initDB() {
   await pool.query(`ALTER TABLE bizneset ADD COLUMN IF NOT EXISTS first_seen_at TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE bizneset ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE bizneset ADD COLUMN IF NOT EXISTS origjina TEXT`);
+  await pool.query(`ALTER TABLE bizneset ADD COLUMN IF NOT EXISTS kandidat_url TEXT`);
 
   // Ngjarjet (shfaqje/klikime) — per gjurmimin
   await pool.query(`
@@ -208,14 +209,19 @@ function merrFaqen(url, thellesia = 0) {
   return new Promise((resolve, reject) => {
     if (thellesia > 4) return reject(new Error('shume ridrejtime'));
     const lib = url.startsWith('https') ? https : http;
-    const kerkesa = lib.get(url, { headers: { 'User-Agent': 'ImyrBot/1.0' } }, resp => {
+    const opts = { headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml'
+    } };
+    const kerkesa = lib.get(url, opts, resp => {
       if ([301,302,303,307,308].includes(resp.statusCode) && resp.headers.location) {
         resp.resume();
         return resolve(merrFaqen(new URL(resp.headers.location, url).toString(), thellesia + 1));
       }
+      const status = resp.statusCode;
       let data = '';
       resp.on('data', c => { data += c; if (data.length > 2000000) resp.destroy(); });
-      resp.on('end', () => resolve(data));
+      resp.on('end', () => resolve({ status, body: data }));
     });
     kerkesa.on('error', reject);
     kerkesa.setTimeout(8000, () => kerkesa.destroy(new Error('koha skadoi')));
@@ -232,11 +238,11 @@ app.post('/api/verifiko', iLoguar, async (req, res) => {
     if (!url) return res.status(400).json({ error: 'Jep URL-ne e faqes ku e vendose kodin.' });
     if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
 
-    let html = '';
-    try { html = await merrFaqen(url); }
+    let faqja;
+    try { faqja = await merrFaqen(url); }
     catch (e) { return res.json({ found: false, error: "S'u arrit faqja: " + e.message, url }); }
 
-    const found = html.includes(celes); // celes-i shfaqet te data-key i snippet-it
+    const found = faqja.body.includes(celes); // celes-i shfaqet te data-key i snippet-it
     if (found) {
       await pool.query(
         `UPDATE bizneset SET snippet_active=true,
@@ -244,8 +250,16 @@ app.post('/api/verifiko', iLoguar, async (req, res) => {
            last_seen_at=now(), origjina=$2 WHERE id=$1`,
         [req.biznesId, url]
       );
+      return res.json({ found: true, url });
     }
-    res.json({ found, url });
+    // Diagnostike me e qarte kur s'gjendet
+    let error;
+    if (faqja.status >= 400) {
+      error = 'Faqja u përgjigj me status ' + faqja.status + ' — ndoshta është me fjalëkalim ose e paarritshme publikisht.';
+    } else {
+      error = 'Faqja u arrit (status ' + faqja.status + ') por kodi s\'u gjet aty. Ndoshta tema është draft/e papublikuar, ose kodi s\'u ruajt te kjo faqe.';
+    }
+    res.json({ found: false, url, status: faqja.status, error });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -254,7 +268,7 @@ const kontrolliFundit = new Map(); // biznes_id -> timestamp (throttle)
 app.get('/api/kontrollo', iLoguar, async (req, res) => {
   try {
     const b = await pool.query(
-      'SELECT celes, website, snippet_active, origjina, last_seen_at FROM bizneset WHERE id=$1', [req.biznesId]);
+      'SELECT celes, website, kandidat_url, snippet_active, origjina, last_seen_at FROM bizneset WHERE id=$1', [req.biznesId]);
     if (!b.rows.length) return res.status(400).json({ error: 'Biznes i panjohur.' });
     const row = b.rows[0];
     const lastSeen = row.last_seen_at ? new Date(row.last_seen_at).getTime() : 0;
@@ -265,7 +279,8 @@ app.get('/api/kontrollo', iLoguar, async (req, res) => {
       return res.json({ active: true, live, origjina: row.origjina || null });
     }
 
-    let url = (row.website || '').trim();
+    // URL per kontroll: fillimisht ajo qe u kap vete (kandidat), pastaj website-i i regjistruar.
+    let url = (row.kandidat_url || row.website || '').trim();
     if (!url) return res.json({ active: false, live: false, siteMissing: true });
     if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
 
@@ -274,8 +289,8 @@ app.get('/api/kontrollo', iLoguar, async (req, res) => {
     if (tani - (kontrolliFundit.get(req.biznesId) || 0) >= 5000) {
       kontrolliFundit.set(req.biznesId, tani);
       try {
-        const html = await merrFaqen(url);
-        if (html.includes(row.celes)) {
+        const faqja = await merrFaqen(url);
+        if (faqja.body.includes(row.celes)) {
           await pool.query(
             `UPDATE bizneset SET snippet_active=true,
                first_seen_at=COALESCE(first_seen_at, now()),
@@ -287,6 +302,49 @@ app.get('/api/kontrollo', iLoguar, async (req, res) => {
     }
     res.json({ active: false, live: false, url });
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// --- TAG.JS (tag i vogel vetem per LIDHJE — firon nga cdo faqe, s'ka nevoje per slot) ---
+app.get('/tag.js', (req, res) => {
+  res.type('application/javascript');
+  res.send(`(function(){
+  var s = document.currentScript;
+  var key = s ? s.getAttribute('data-key') : null;
+  var base = s ? new URL(s.src).origin : '';
+  if(!key) return;
+  if(window.Shopify && window.Shopify.designMode) return; // mos numero preview-in e Shopify
+  function njofto(){
+    try {
+      var u = base + '/lidh?key=' + encodeURIComponent(key);
+      navigator.sendBeacon ? navigator.sendBeacon(u) : fetch(u, {mode:'no-cors'});
+    } catch(e){}
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', njofto);
+  else njofto();
+})();`);
+});
+
+// --- LIDH (sinjali i tag-ut: shenon lidhjen + URL-en, pa lidhje me slot-in) ---
+app.get('/lidh', async (req, res) => {
+  cors(res);
+  const key = req.query.key;
+  if (!key) return res.status(204).end();
+  try {
+    const b = await pool.query('SELECT id, snippet_active FROM bizneset WHERE celes=$1', [key]);
+    if (b.rows.length) {
+      const bizId = b.rows[0].id;
+      const faqja = req.headers.referer || req.headers.origin || null;
+      if (!b.rows[0].snippet_active) {
+        await pool.query(
+          `UPDATE bizneset SET snippet_active=true, first_seen_at=now(), last_seen_at=now(),
+             origjina=$2, kandidat_url=COALESCE(kandidat_url,$2) WHERE id=$1`,
+          [bizId, faqja]);
+      } else {
+        await pool.query('UPDATE bizneset SET last_seen_at=now() WHERE id=$1', [bizId]);
+      }
+    }
+  } catch (e) {}
+  res.status(204).end();
 });
 
 // --- WIDGET.JS (snippet-i qe vendoset te dyqani) ---
@@ -340,11 +398,19 @@ app.get('/ad', async (req, res) => {
     if (!b.rows.length) return res.json({ teksti: null });
     const bizId = b.rows[0].id;
     const origin = req.headers.origin || req.headers.referer || null;
+    // URL e plote e faqes ku u ngarkua widget-i (per te kontrolluar pikerisht ate faqe, jo vetem homepage-in)
+    const faqjaPlote = req.headers.referer || req.headers.origin || null;
+
+    // Kap faqen ku ndodhet kodi (edhe ne preview) — PA e shenuar te lidhur.
+    // Ruajme URL-en e plote me te fundit ku u pa widget-i; kjo perdoret per kontrollin server-ane.
+    if (faqjaPlote) {
+      await pool.query('UPDATE bizneset SET kandidat_url=$2 WHERE id=$1', [bizId, faqjaPlote]);
+    }
 
     // VETEM per kerkesa reale (jo preview i Shopify): sheno lidhjen + heartbeat.
     if (!preview) {
       if (!b.rows[0].snippet_active) {
-        // kerkesa e pare reale: shenim i lidhjes
+        // ngarkim real (faqe e ruajtur/live): shenim i lidhjes
         await pool.query(
           'UPDATE bizneset SET snippet_active=true, first_seen_at=now(), last_seen_at=now(), origjina=$2 WHERE id=$1',
           [bizId, origin]

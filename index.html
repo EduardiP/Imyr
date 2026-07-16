@@ -110,18 +110,12 @@
           <b>Hapësira</b> (<code>imyr-slot</code>) vendose aty ku do të dalë reklama.
         </div>
         <div class="small" style="margin-top:12px;color:var(--txt);">
-          Pasi të keni shtuar kodin në webin tuaj, kthehuni dhe klikoni butonin poshtë për të konfirmuar lidhjen.
+          Pasi të keni shtuar kodin në faqen tuaj dhe ta keni ruajtur, shkruani URL-në e asaj faqeje dhe klikoni butonin — hapja e faqes e konfirmon lidhjen vetë.
         </div>
-        <button class="btn cta" style="width:100%;margin-top:10px;" id="btnHap" onclick="hapDheVerifiko()">Kliko lidhjen e webit tuaj</button>
+        <label style="margin-top:10px;">URL-ja e faqes ku e vendose kodin</label>
+        <input id="hapUrl" placeholder="https://faqja-ime.com">
+        <button class="btn cta" style="width:100%;margin-top:10px;" id="btnHap" onclick="hapDheVerifiko()">Hap faqen dhe konfirmo lidhjen</button>
         <div class="status wait hide" id="statusLine" style="margin-top:10px;"></div>
-      </div>
-
-      <!-- Fallback: nese s'ka URL faqeje te regjistruar -->
-      <div id="manualVerify" class="hide" style="margin-top:12px;">
-        <label>URL-ja e faqes ku e vendose kodin</label>
-        <input id="verifyUrl" placeholder="https://faqja-ime.com">
-        <button class="btn cta" style="width:100%;margin-top:8px;" id="btnVerifiko" onclick="verifiko()">Verifiko lidhjen</button>
-        <div class="small" id="verifyMsg" style="margin-top:6px;"></div>
       </div>
     </div>
 
@@ -233,12 +227,12 @@
   }
 
   function hapDheVerifiko(){
-    var url = window.__website || '';
-    if(!url){ $('manualVerify').classList.remove('hide'); return; }
+    var url = ($('hapUrl').value || '').trim();
+    if(!url){ $('hapUrl').focus(); return; }
     if(!/^https?:\/\//i.test(url)) url = 'https://' + url;
-    window.open(url, '_blank');                 // hapja e pare → tag-u firon
+    window.open(url, '_blank');                 // hapja e faqes → tag-u firon → /lidh
     $('statusLine').classList.remove('hide');
-    $('statusLine').innerHTML = '⏳ E hapa faqen tënde… po pres sinjalin e tag-ut.';
+    $('statusLine').innerHTML = '⏳ E hapa faqen… po pres sinjalin e tag-ut. Sapo të firojë, kalon vetë te suksesi.';
     startPolling();
   }
 
@@ -252,6 +246,7 @@
     $('stepCode').classList.remove('hide');
     $('stepSuccess').classList.add('hide');
     $('kodBox').value = snippetKod();
+    if ($('hapUrl') && !$('hapUrl').value) $('hapUrl').value = window.__website || '';
     $('afterCopy').classList.add('hide');       // fillimisht: vetem kodi + Kopjo
     $('statusLine').classList.add('hide');
   }
@@ -268,19 +263,6 @@
     const el = $('liveBadge'); if(!el) return;
     if (st && st.live) { el.textContent = '🟢 Aktiv tani — po merr shikime'; el.style.color = 'var(--good)'; }
     else { el.textContent = '✓ I instaluar (ende pa vizitorë tani)'; el.style.color = 'var(--mut)'; }
-  }
-
-  async function verifiko(){
-    const url = ($('verifyUrl').value || '').trim();
-    if(!url){ $('verifyMsg').textContent = 'Shkruaj URL-në e faqes.'; return; }
-    $('btnVerifiko').disabled = true;
-    $('verifyMsg').textContent = 'Po kontrolloj faqen…';
-    try {
-      const r = await (await fetch('/api/verifiko',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})})).json();
-      if (r.found) { trregoSukses({ origjina: r.url, live: true }); startPolling(); }
-      else { $('verifyMsg').textContent = r.error ? r.error : "S'u gjet kodi te ajo faqe. Sigurohu që e ruajte dhe që faqja s'është me fjalëkalim."; }
-    } catch(e){ $('verifyMsg').textContent = 'Gabim: ' + e.message; }
-    $('btnVerifiko').disabled = false;
   }
 
   async function gjenero(){
@@ -313,10 +295,6 @@
     try {
       const st = await (await fetch('/api/kontrollo')).json();
       if (st.active) { trregoSukses(st); return; }
-      if (st.siteMissing) {
-        $('manualVerify').classList.remove('hide');
-        $('statusLine').textContent = 'Shto URL-në e faqes që Imyr ta kontrollojë vetë.';
-      }
     } catch(e){}
   }
 

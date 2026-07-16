@@ -106,8 +106,7 @@
       <!-- Shfaqet vetem PAS kopjimit -->
       <div id="afterCopy" class="hide">
         <div class="small" style="margin-top:12px;">
-          <b>Tag-u i lidhjes</b> (rreshti i parë) vendose kudo, p.sh. te footer-i — del në çdo faqe dhe konfirmon lidhjen.
-          <b>Hapësira</b> (<code>imyr-slot</code>) vendose aty ku do të dalë reklama.
+          Një rresht i vetëm — vendose kudo te faqja jote (p.sh. te footer-i). Bën vetë lidhjen dhe shfaq reklamën aty ku e ngjit.
         </div>
         <div class="small" style="margin-top:12px;color:var(--txt);">
           Pasi të keni shtuar kodin në faqen tuaj dhe ta keni ruajtur, shkruani URL-në e asaj faqeje dhe klikoni butonin — hapja e faqes e konfirmon lidhjen vetë.
@@ -218,12 +217,7 @@
   // --- CONNECT FLOW ---
   function snippetKod(){
     var o = location.origin, k = (window.__celes||'');
-    return ''
-      + '<!-- Imyr: tag i lidhjes (vendose kudo, p.sh. te footer-i) -->\n'
-      + '<script src="'+o+'/tag.js" data-key="'+k+'"></'+'script>\n\n'
-      + '<!-- Imyr: hapësira e reklamës (vendose ku do të dalë reklama) -->\n'
-      + '<div id="imyr-slot"></div>\n'
-      + '<script src="'+o+'/widget.js" data-key="'+k+'"></'+'script>';
+    return '<script src="'+o+'/imyr.js" data-key="'+k+'"></'+'script>';
   }
 
   function hapDheVerifiko(){

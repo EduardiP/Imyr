@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SaaS Test — faqe prove për Imyr</title>
+<style>
+  body { margin:0; font:16px/1.6 system-ui,Segoe UI,Roboto,sans-serif; color:#1a1a2e; background:#f5f6fa; }
+  header { background:#3b3b98; color:#fff; padding:16px 24px; font-weight:700; letter-spacing:.05em; }
+  .hero { max-width:760px; margin:0 auto; padding:48px 24px; }
+  .hero h1 { font-size:34px; margin:0 0 8px; }
+  .hero p { color:#555; font-size:18px; }
+  .cta { display:inline-block; margin-top:16px; background:#3b3b98; color:#fff; padding:12px 22px; border-radius:8px; text-decoration:none; }
+  .box { max-width:760px; margin:0 auto 40px; padding:0 24px; }
+  .note { border:1px dashed #b0b0d0; border-radius:10px; padding:14px 16px; color:#555; font-size:14px; background:#fff; }
+</style>
+</head>
+<body>
+
+<header>SAAS TEST</header>
+
+<div class="hero">
+  <h1>Faqja ime SaaS (prove)</h1>
+  <p>Kjo është një faqe e thjeshtë publike që imiton një SaaS real, për të testuar lidhjen me Imyr saktë siç do të ishte për një partner të vërtetë.</p>
+  <a class="cta" href="#">Provo falas</a>
+</div>
+
+<div class="box">
+  <!-- KODI IMYR: hapesira ku shfaqet reklama -->
+  <div id="imyr-slot"></div>
+  <script src="https://imyr-production.up.railway.app/widget.js" data-key="CELESI_YT"></script>
+
+  <p class="note">
+    Zëvendëso <b>CELESI_YT</b> me çelësin tënd nga Imyr (te kodi që të jep faqja pas login-it).
+    Nëse ke lidhur domain te Railway, ndrysho edhe <b>imyr-production.up.railway.app</b> me domain-in tënd.
+  </p>
+</div>
+
+</body>
+</html>

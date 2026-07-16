@@ -96,16 +96,21 @@
 
     <!-- HAPI 2: kodi + pritja -->
     <div id="stepCode" class="hide" style="margin-top:6px;">
-      <p class="step-title">Hapi 2 — ngjit kodin te dyqani yt</p>
+      <p class="step-title">Hapi 2 — ngjit kodin te faqja jote</p>
       <textarea class="kod" id="kodBox" readonly></textarea>
       <div class="rowbtn">
         <button class="btn" id="copyBtn" onclick="kopjo()">Kopjo</button>
         <button class="btn ghost" onclick="ndrysho()">Ndrysho tekstin</button>
       </div>
-      <div class="status wait" id="statusLine">⏳ Po kontrolloj faqen tënde automatikisht… ruaj ndryshimin te SaaS-i.</div>
-      <div class="small" style="margin-top:8px;">Vendos <code>&lt;div id="imyr-slot"&gt;&lt;/div&gt;</code> aty ku do reklama, dhe kodin poshtë saj. Sapo ta ruash, Imyr e kap vetë — pa pasur nevojë ta hapë njeri.</div>
+      <div class="small" style="margin-top:8px;">
+        <b>Tag-u i lidhjes</b> (rreshti i parë) vendose kudo, p.sh. te footer-i — del në çdo faqe dhe konfirmon lidhjen.
+        <b>Hapësira</b> (<code>imyr-slot</code>) vendose aty ku do të dalë reklama.
+      </div>
 
-      <!-- Fallback: vetem nese s'ka URL faqeje te regjistruar -->
+      <button class="btn cta" style="width:100%;margin-top:12px;" id="btnHap" onclick="hapDheVerifiko()">Hap faqen time dhe verifiko</button>
+      <div class="status wait" id="statusLine" style="margin-top:10px;">⏳ Pasi të ruash kodin, kliko butonin lart — Imyr e kap lidhjen vetë.</div>
+
+      <!-- Fallback: nese s'ka URL faqeje te regjistruar -->
       <div id="manualVerify" class="hide" style="margin-top:12px;">
         <label>URL-ja e faqes ku e vendose kodin</label>
         <input id="verifyUrl" placeholder="https://faqja-ime.com">
@@ -212,7 +217,22 @@
 
   // --- CONNECT FLOW ---
   function snippetKod(){
-    return '<div id="imyr-slot"></div>\n<script src="'+location.origin+'/widget.js" data-key="'+(window.__celes||'')+'"></'+'script>';
+    var o = location.origin, k = (window.__celes||'');
+    return ''
+      + '<!-- Imyr: tag i lidhjes (vendose kudo, p.sh. te footer-i) -->\n'
+      + '<script src="'+o+'/tag.js" data-key="'+k+'"></'+'script>\n\n'
+      + '<!-- Imyr: hapësira e reklamës (vendose ku do të dalë reklama) -->\n'
+      + '<div id="imyr-slot"></div>\n'
+      + '<script src="'+o+'/widget.js" data-key="'+k+'"></'+'script>';
+  }
+
+  function hapDheVerifiko(){
+    var url = window.__website || '';
+    if(!url){ $('manualVerify').classList.remove('hide'); $('statusLine').textContent = 'Shto URL-në e faqes që ta hapim e ta verifikojmë.'; return; }
+    if(!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    window.open(url, '_blank');                 // hapja e pare → tag-u firon
+    $('statusLine').innerHTML = '⏳ E hapa faqen tënde… po pres sinjalin e tag-ut.';
+    startPolling();
   }
 
   function trregoInput(){
@@ -308,6 +328,7 @@
     if (!r.ok) return; // s'eshte i loguar → mbetet hero + butonat
     const u = await r.json();
     window.__celes = u.celes;
+    window.__website = u.website || '';
 
     // Header: hiq butonat djathtas, shto Log out majtas
     $('hdrRight').innerHTML = '';

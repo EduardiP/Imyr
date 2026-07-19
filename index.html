@@ -9,142 +9,131 @@
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--txt); font:16px/1.6 system-ui,Segoe UI,Roboto,sans-serif; }
 
-  /* HEADER */
-  .topbar { display:flex; align-items:center; justify-content:space-between; padding:14px 20px;
-    border-bottom:1px solid var(--line); position:sticky; top:0; background:rgba(14,17,22,.9); backdrop-filter:blur(6px); z-index:20; }
+  .topbar { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--line); position:sticky; top:0; background:rgba(14,17,22,.9); backdrop-filter:blur(6px); z-index:20; }
   .topbar .side { flex:1; display:flex; align-items:center; gap:8px; }
   .topbar .side.right { justify-content:flex-end; }
-  .topbar .logo { font-weight:700; letter-spacing:.1em; color:var(--acc); font-size:18px; text-align:center; flex:0 0 auto; }
+  .topbar .logo { font-weight:700; letter-spacing:.1em; color:var(--acc); font-size:18px; flex:0 0 auto; }
   .btn { padding:8px 14px; border-radius:8px; font-size:14px; cursor:pointer; border:1px solid var(--line); background:transparent; color:var(--txt); }
   .btn.cta { background:var(--acc); color:#1a1205; border-color:var(--acc); font-weight:600; }
   .btn.ghost { color:var(--mut); }
-  .btn:hover { opacity:.9; }
+  .btn:disabled { opacity:.5; }
 
-  .wrap { max-width:520px; margin:0 auto; padding:48px 20px 80px; }
+  .wrap { max-width:560px; margin:0 auto; padding:40px 20px 80px; }
+  .wrap.wide { max-width:680px; }
+  .view { display:none; } .view.on { display:block; }
 
-  /* HERO (kur nuk je i loguar) */
   .hero { text-align:center; }
-  .hero h1 { font-size:40px; margin:0; letter-spacing:.08em; color:var(--acc); font-weight:700; }
+  .hero h1 { font-size:40px; margin:0; letter-spacing:.08em; color:var(--acc); }
   .hero p { color:var(--mut); margin:10px 0 26px; font-size:16px; }
 
   .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:22px; }
-
-  /* MODAL */
-  .backdrop { position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; padding:20px; z-index:40; }
-  .modal { width:100%; max-width:420px; }
-  .modal .x { float:right; background:none; border:none; color:var(--mut); font-size:20px; cursor:pointer; line-height:1; }
-
-  .tabs { display:flex; gap:8px; margin:6px 0 18px; }
-  .tab { flex:1; text-align:center; padding:8px; border-radius:8px; cursor:pointer; color:var(--mut); font-size:14px; border:1px solid transparent; }
-  .tab.active { background:#0e1116; color:var(--txt); border-color:var(--line); }
   label { display:block; font-size:13px; color:var(--mut); margin:12px 0 4px; }
-  input, select, textarea { width:100%; padding:10px 12px; background:#0e1116; border:1px solid var(--line); border-radius:8px; color:var(--txt); font-size:14px; font-family:inherit; }
+  input, textarea, select { width:100%; padding:10px 12px; background:#0e1116; border:1px solid var(--line); border-radius:8px; color:var(--txt); font-size:14px; font-family:inherit; }
   textarea { resize:vertical; min-height:80px; }
   button.primary { width:100%; margin-top:18px; padding:11px; background:var(--acc); color:#1a1205; border:none; border-radius:9px; font-weight:600; font-size:15px; cursor:pointer; }
   button.primary:disabled { opacity:.5; }
   .msg { margin-top:12px; font-size:13px; min-height:18px; }
   .msg.err { color:var(--err); } .msg.ok { color:var(--good); }
   .hide { display:none; }
-
-  /* CONNECT (pas login) */
-  .celes { font-family:monospace; font-size:12px; color:var(--acc); word-break:break-all; }
-  .kod { width:100%; min-height:96px; font-family:monospace; font-size:12.5px; background:#0e1116; border:1px solid var(--line); border-radius:8px; color:var(--acc); padding:12px; resize:vertical; }
-  .status { margin-top:14px; padding:12px 14px; border-radius:10px; border:1px solid var(--line); background:#0e1116; font-size:14px; color:var(--mut); }
-  .status.wait { border-color:#4a3d1e; color:#d4a24e; }
-  .step-title { font-size:13px; color:var(--mut); margin:0 0 8px; text-transform:uppercase; letter-spacing:.05em; }
-  .success { text-align:center; padding:14px 0; }
-  .success .tick { font-size:44px; color:var(--good); }
-  .success h2 { margin:8px 0 4px; }
   .small { font-size:13px; color:var(--mut); }
   .rowbtn { display:flex; gap:8px; margin-top:10px; }
   .rowbtn .btn { flex:1; text-align:center; }
 
-  /* WIZARD */
-  .wizcard { width:100%; max-width:460px; }
-  .prog { height:6px; background:var(--line); border-radius:4px; overflow:hidden; margin:2px 0 6px; }
-  .prog > div { height:100%; background:var(--acc); width:33%; transition:width .3s; }
-  .stepn { font-size:12px; color:var(--mut); letter-spacing:.05em; text-transform:uppercase; margin-bottom:14px; }
-  .wizh { font-size:19px; margin:0 0 4px; }
-  .wizsub { color:var(--mut); font-size:13px; margin:0 0 12px; }
-  .chk { display:flex; gap:10px; align-items:flex-start; margin-top:12px; font-size:13px; color:var(--txt); cursor:pointer; }
+  /* MODAL */
+  .backdrop { position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; padding:20px; z-index:40; }
+  .modal { width:100%; max-width:420px; }
+  .modal .x { float:right; background:none; border:none; color:var(--mut); font-size:20px; cursor:pointer; }
+  .tabs { display:flex; gap:8px; margin:6px 0 18px; }
+  .tab { flex:1; text-align:center; padding:8px; border-radius:8px; cursor:pointer; color:var(--mut); font-size:14px; border:1px solid transparent; }
+  .tab.active { background:#0e1116; color:var(--txt); border-color:var(--line); }
+
+  /* HORIZONTAL STEPPER */
+  .hstep { display:flex; justify-content:space-between; margin:6px auto 26px; }
+  .hstep .st { flex:1; text-align:center; position:relative; }
+  .hstep .st .dot { width:30px; height:30px; border-radius:50%; background:var(--card); border:2px solid var(--line); color:var(--mut); display:flex; align-items:center; justify-content:center; margin:0 auto 6px; font-size:13px; font-weight:600; position:relative; z-index:2; }
+  .hstep .st.done .dot { background:var(--acc); border-color:var(--acc); color:#1a1205; }
+  .hstep .st.cur .dot { border-color:var(--acc); color:var(--acc); }
+  .hstep .st .lbl { font-size:12px; color:var(--mut); }
+  .hstep .st.done .lbl, .hstep .st.cur .lbl { color:var(--txt); }
+  .hstep .st:not(:last-child)::after { content:''; position:absolute; top:15px; left:50%; width:100%; height:2px; background:var(--line); z-index:1; }
+  .hstep .st.done:not(:last-child)::after { background:var(--acc); }
+
+  /* VERTICAL STEPPER (dashboard) */
+  .dashttl { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--mut); margin:0 0 6px; }
+  .vstep { display:flex; flex-direction:column; }
+  .vs { display:flex; gap:12px; align-items:center; padding:11px 10px; border-radius:9px; }
+  .vs .vd { width:26px; height:26px; border-radius:50%; border:2px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:12px; flex:0 0 auto; color:var(--mut); }
+  .vs.done .vd { background:var(--acc); border-color:var(--acc); color:#1a1205; }
+  .vs.cur .vd { border-color:var(--acc); color:var(--acc); }
+  .vs .vl { font-size:14px; }
+  .vs.locked { opacity:.45; }
+  .vs.click { cursor:pointer; }
+  .vs.click:hover { background:#0e1116; }
+  .vs.locked .vl { color:var(--mut); }
+
+  .status { margin-top:12px; padding:12px 14px; border-radius:10px; border:1px solid var(--line); background:#0e1116; font-size:14px; color:var(--mut); }
+  .status.wait { border-color:#4a3d1e; color:var(--acc); }
+  .kod { width:100%; min-height:60px; font-family:monospace; font-size:12.5px; background:#0e1116; border:1px solid var(--line); border-radius:8px; color:var(--acc); padding:12px; resize:vertical; }
+  .chk { display:flex; gap:10px; align-items:flex-start; margin-top:12px; font-size:13px; cursor:pointer; }
   .chk input { width:auto; margin-top:3px; }
-  .aibox { background:#0e1116; border:1px solid var(--line); border-radius:10px; padding:14px; margin-top:6px; }
-  .aibox .tag { display:inline-block; background:#1a1205; color:var(--acc); border:1px solid #4a3d1e; border-radius:6px; padding:3px 9px; font-size:12px; margin:3px 4px 0 0; }
-  .spin { display:inline-block; width:16px; height:16px; border:2px solid var(--line); border-top-color:var(--acc); border-radius:50%; animation:sp 0.8s linear infinite; vertical-align:middle; }
+  .tag { display:inline-block; background:#1a1205; color:var(--acc); border:1px solid #4a3d1e; border-radius:6px; padding:3px 9px; font-size:12px; margin:3px 4px 0 0; }
+  .spin { display:inline-block; width:15px; height:15px; border:2px solid var(--line); border-top-color:var(--acc); border-radius:50%; animation:sp .8s linear infinite; vertical-align:middle; }
   @keyframes sp { to { transform:rotate(360deg); } }
+  .row { display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid #20262f; font-size:14px; }
+  .row .k { color:var(--mut); }
+  .celes { font-family:monospace; font-size:12px; color:var(--acc); word-break:break-all; }
+  h2.h { font-size:20px; margin:0 0 4px; }
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <header class="topbar">
   <div class="side left" id="hdrLeft"></div>
   <div class="logo">IMYR</div>
   <div class="side right" id="hdrRight">
     <button class="btn" onclick="hapModal('hyr')">Log in</button>
-    <button class="btn cta" onclick="hapWizard()">Try for free</button>
+    <button class="btn cta" onclick="startWizard()">Try for free</button>
   </div>
 </header>
 
-<div class="wrap">
-
-  <!-- HERO (kur je i paloguar) -->
-  <div class="hero" id="hero">
+<!-- HERO -->
+<div class="wrap view on" id="v-hero">
+  <div class="hero">
     <h1>IMYR</h1>
     <p>Rrjeti ku bizneset promovojnë njëri-tjetrin</p>
-    <button class="btn cta" onclick="hapWizard()">Provo falas</button>
+    <button class="btn cta" onclick="startWizard()">Provo falas</button>
   </div>
-
-  <!-- CONNECT (pas login) -->
-  <div class="card hide" id="connect">
-    <div class="small">Mirë se erdhe, <b id="c_emri"></b> 👋</div>
-
-    <!-- HAPI 1: teksti -->
-    <div id="stepInput" style="margin-top:14px;">
-      <p class="step-title">Hapi 1 — çfarë do të promovosh</p>
-      <label>Shkruaj tekstin që do të shfaqet te hapësira e reklamës</label>
-      <textarea id="promoText" placeholder="p.sh. Zbritje 20% te dyqani ynë këtë javë!"></textarea>
-      <button class="primary" id="btnGjenero" onclick="gjenero()">Gjenero kodin ↵</button>
-      <div class="small" style="margin-top:8px;">Shtyp <b>Enter</b> ose kliko butonin.</div>
-    </div>
-
-    <!-- HAPI 2: kodi + pritja -->
-    <div id="stepCode" class="hide" style="margin-top:6px;">
-      <p class="step-title">Hapi 2 — ngjit kodin te faqja jote</p>
-      <textarea class="kod" id="kodBox" readonly></textarea>
-      <div class="rowbtn">
-        <button class="btn cta" id="copyBtn" onclick="kopjo()">Kopjo</button>
-        <button class="btn ghost" onclick="ndrysho()">Ndrysho tekstin</button>
-      </div>
-
-      <!-- Shfaqet vetem PAS kopjimit -->
-      <div id="afterCopy" class="hide">
-        <div class="small" style="margin-top:12px;">
-          Një rresht i vetëm — vendose kudo te faqja jote (p.sh. te footer-i). Bën vetë lidhjen dhe shfaq reklamën aty ku e ngjit.
-        </div>
-        <div class="small" style="margin-top:12px;color:var(--txt);">
-          Pasi të keni shtuar kodin në faqen tuaj dhe ta keni ruajtur, shkruani URL-në e asaj faqeje dhe klikoni butonin — hapja e faqes e konfirmon lidhjen vetë.
-        </div>
-        <label style="margin-top:10px;">URL-ja e faqes ku e vendose kodin</label>
-        <input id="hapUrl" placeholder="https://faqja-ime.com">
-        <button class="btn cta" style="width:100%;margin-top:10px;" id="btnHap" onclick="hapDheVerifiko()">Hap faqen dhe konfirmo lidhjen</button>
-        <div class="status wait hide" id="statusLine" style="margin-top:10px;"></div>
-      </div>
-    </div>
-
-    <!-- HAPI 3: sukses -->
-    <div id="stepSuccess" class="hide success">
-      <div class="tick">✓</div>
-      <h2>U krijua me sukses!</h2>
-      <p class="small">Kodi u gjet dhe u lidh te faqja jote.</p>
-      <p class="small" id="okOrigin" style="color:var(--acc);"></p>
-      <p class="small" id="liveBadge"></p>
-    </div>
-  </div>
-
 </div>
 
-<!-- MODAL AUTH -->
+<!-- WIZARD (full-screen) -->
+<div class="wrap wide view" id="v-wizard">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <div class="small" id="wizStepN"></div>
+    <button class="btn ghost" onclick="closeWizard()">Ruaj &amp; dil ✕</button>
+  </div>
+  <div class="hstep" id="hstep"></div>
+  <div class="card" id="wizBody"></div>
+</div>
+
+<!-- PROFILE -->
+<div class="wrap view" id="v-profile">
+  <div class="card" style="margin-bottom:16px;">
+    <h2 class="h" id="p_emri"></h2>
+    <div class="row"><span class="k">Email</span><span id="p_email"></span></div>
+    <div class="row"><span class="k">Kategoria</span><span id="p_kat"></span></div>
+    <div class="row"><span class="k">Plani</span><span id="p_plan"></span></div>
+    <div style="margin-top:12px;">
+      <div class="small">Përmbledhja (për algoritmin):</div>
+      <div id="p_perm" style="font-size:14px;"></div>
+    </div>
+  </div>
+  <div class="card">
+    <p class="dashttl">Dashboard — hapat e konfigurimit</p>
+    <div class="vstep" id="vstep"></div>
+  </div>
+</div>
+
+<!-- LOGIN MODAL -->
 <div class="backdrop hide" id="modal">
   <div class="card modal">
     <button class="x" onclick="mbyllModal()">✕</button>
@@ -152,309 +141,288 @@
       <div class="tab active" id="tabHyr" onclick="shfaq('hyr')">Hyr</div>
       <div class="tab" id="tabReg" onclick="shfaq('reg')">Regjistrohu</div>
     </div>
-
-    <!-- HYRJE -->
     <div id="formHyr">
-      <label>Email</label>
-      <input id="h_email" type="email" placeholder="email@biznesi.com">
-      <label>Fjalëkalimi</label>
-      <input id="h_pass" type="password" placeholder="••••••">
+      <label>Email</label><input id="h_email" type="email" placeholder="email@biznesi.com">
+      <label>Fjalëkalimi</label><input id="h_pass" type="password" placeholder="••••••">
       <button class="primary" id="btnHyr" onclick="hyr()">Hyr</button>
     </div>
-
-    <!-- REGJISTRIM -->
     <div id="formReg" class="hide">
-      <label>Emri i biznesit</label>
-      <input id="r_emri" placeholder="Biznesi im">
-      <label>Email</label>
-      <input id="r_email" type="email" placeholder="email@biznesi.com">
-      <label>Fjalëkalimi (min 6 shkronja)</label>
-      <input id="r_pass" type="password" placeholder="••••••">
-      <label>Faqja (website)</label>
-      <input id="r_web" placeholder="https://biznesi.com">
+      <label>Emri i biznesit</label><input id="r_emri" placeholder="Biznesi im">
+      <label>Email</label><input id="r_email" type="email" placeholder="email@biznesi.com">
+      <label>Fjalëkalimi (min 6)</label><input id="r_pass" type="password" placeholder="••••••">
+      <label>Faqja (website)</label><input id="r_web" placeholder="https://biznesi.com">
       <button class="primary" id="btnReg" onclick="regjistrohu()">Krijo llogari</button>
     </div>
-
     <div class="msg" id="msg"></div>
-  </div>
-</div>
-
-<!-- WIZARD (Provo falas) -->
-<div class="backdrop hide" id="wizard">
-  <div class="card wizcard">
-    <button class="x" onclick="mbyllWizard()" style="float:right;background:none;border:none;color:var(--mut);font-size:20px;cursor:pointer;line-height:1;">✕</button>
-    <div class="prog"><div id="progBar"></div></div>
-    <div class="stepn" id="stepN">Hapi 1 nga 3</div>
-
-    <!-- HAPI 1: Krijo llogari -->
-    <div id="wz1">
-      <h2 class="wizh">Krijo llogarinë</h2>
-      <p class="wizsub">Fillo me të dhënat bazë të biznesit tënd.</p>
-      <label>Emri i biznesit</label>
-      <input id="w_emri" placeholder="Biznesi im">
-      <label>Email</label>
-      <input id="w_email" type="email" placeholder="email@biznesi.com">
-      <label>Fjalëkalimi (min 6 shkronja)</label>
-      <input id="w_pass" type="password" placeholder="••••••">
-      <label>Faqja / linku i SaaS-it</label>
-      <input id="w_web" placeholder="https://saasi-im.com">
-      <button class="primary" id="wBtn1" onclick="wizKrijo()">Vazhdo →</button>
-      <div class="msg" id="wMsg1"></div>
-    </div>
-
-    <!-- HAPI 2: Përshkrimi + leje analize -->
-    <div id="wz2" class="hide">
-      <h2 class="wizh">Përshkruaj biznesin</h2>
-      <p class="wizsub">Sa më e qartë, aq më mirë e gjen algoritmi partnerin e duhur.</p>
-      <label>Çfarë ofron biznesi yt?</label>
-      <textarea id="w_pershkrim" placeholder="p.sh. Mjet email-marketing për dyqane të vogla online..."></textarea>
-      <label class="chk">
-        <input type="checkbox" id="w_lejo" checked>
-        <span>Lejo që linku i SaaS-it që dhashë të studiohet automatikisht, që analiza të jetë më e saktë.</span>
-      </label>
-      <button class="primary" id="wBtn2" onclick="wizAnalizo()">Analizo dhe vazhdo →</button>
-      <div class="msg" id="wMsg2"></div>
-    </div>
-
-    <!-- HAPI 3: Rezultati AI -->
-    <div id="wz3" class="hide">
-      <h2 class="wizh">Gati! 🎉</h2>
-      <p class="wizsub">Ja si e kuptoi Imyr biznesin tënd:</p>
-      <div class="aibox" id="wResult"></div>
-      <button class="primary" onclick="wizPerfundo()">Shko te profili im →</button>
-    </div>
   </div>
 </div>
 
 <script>
   const $ = id => document.getElementById(id);
-  let pollTimer = null;
-  let wizStep = 1;
+  let pollTimer = null, prog = null, une = null, curStep = 0;
+  const STEPS = [
+    { key:'llogaria',   label:'Llogaria' },
+    { key:'pershkrimi', label:'Përshkrimi' },
+    { key:'lidhja',     label:'Lidhja' },
+    { key:'reklama',    label:'Reklama' }
+  ];
 
-  // --- MODAL ---
+  function showView(v){ ['hero','wizard','profile'].forEach(x=>$('v-'+x).classList.toggle('on', x===v)); }
+
+  // ---------- LOGIN MODAL ----------
   function hapModal(k){ $('modal').classList.remove('hide'); shfaq(k); }
   function mbyllModal(){ $('modal').classList.add('hide'); $('msg').textContent=''; }
-  $('modal').addEventListener('click', e => { if(e.target.id==='modal') mbyllModal(); });
-
-  // --- WIZARD ---
-  function hapWizard(){ wizStep=1; wizGo(1); $('wizard').classList.remove('hide'); }
-  function mbyllWizard(){ $('wizard').classList.add('hide'); }
-  $('wizard').addEventListener('click', e => { if(e.target.id==='wizard') mbyllWizard(); });
-
-  function wizGo(n){
-    wizStep = n;
-    $('wz1').classList.toggle('hide', n!==1);
-    $('wz2').classList.toggle('hide', n!==2);
-    $('wz3').classList.toggle('hide', n!==3);
-    $('progBar').style.width = (n*33.33) + '%';
-    $('stepN').textContent = 'Hapi ' + n + ' nga 3';
-  }
-
-  async function wizKrijo(){
-    const emri=$('w_emri').value.trim(), email=$('w_email').value.trim(),
-          pass=$('w_pass').value, web=$('w_web').value.trim();
-    if(!emri||!email||!pass){ $('wMsg1').className='msg err'; $('wMsg1').textContent='Plotëso emrin, email-in dhe fjalëkalimin.'; return; }
-    if(pass.length<6){ $('wMsg1').className='msg err'; $('wMsg1').textContent='Fjalëkalimi min 6 shkronja.'; return; }
-    $('wBtn1').disabled=true; $('wMsg1').textContent='';
-    try{
-      const r = await (await fetch('/api/regjistrohu',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({emri,email,fjalekalimi:pass,website:web})})).json();
-      if(r.error){ $('wMsg1').className='msg err'; $('wMsg1').textContent=r.error; $('wBtn1').disabled=false; return; }
-      wizGo(2);
-    }catch(e){ $('wMsg1').className='msg err'; $('wMsg1').textContent='Gabim: '+e.message; }
-    $('wBtn1').disabled=false;
-  }
-
-  async function wizAnalizo(){
-    const pershkrimi=$('w_pershkrim').value.trim(), lejo=$('w_lejo').checked;
-    if(!pershkrimi){ $('wMsg2').className='msg err'; $('wMsg2').textContent='Shkruaj një përshkrim të shkurtër.'; return; }
-    $('wBtn2').disabled=true;
-    $('wMsg2').className='msg'; $('wMsg2').innerHTML='<span class="spin"></span> Imyr po studion biznesin…';
-    try{
-      const r = await (await fetch('/api/analizo',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({pershkrimi,lejo})})).json();
-      if(r.error){ $('wMsg2').className='msg err'; $('wMsg2').textContent=r.error; $('wBtn2').disabled=false; return; }
-      // ndërto rezultatin
-      let html='';
-      if(r.ai){
-        html += '<div class="small" style="color:var(--mut)">Kategoria kryesore</div>';
-        html += '<div style="font-weight:600;margin-bottom:8px;">'+(r.kategoria_kryesore||'—')+'</div>';
-        if(r.nenkategorite){
-          html += '<div class="small" style="color:var(--mut)">Nënkategori</div><div style="margin-bottom:8px;">';
-          html += (r.nenkategorite.split(',').map(s=>'<span class="tag">'+s.trim()+'</span>').join(''));
-          html += '</div>';
-        }
-        if(r.permbledhje){
-          html += '<div class="small" style="color:var(--mut)">Përmbledhja</div><div style="font-size:14px;">'+r.permbledhje+'</div>';
-        }
-      } else {
-        html += '<div style="font-size:14px;">Përshkrimi u ruajt. '+(r.note||'Kategorizimi me AI do të bëhet së shpejti.')+'</div>';
-      }
-      $('wResult').innerHTML = html;
-      wizGo(3);
-    }catch(e){ $('wMsg2').className='msg err'; $('wMsg2').textContent='Gabim: '+e.message; }
-    $('wBtn2').disabled=false;
-  }
-
-  function wizPerfundo(){ mbyllWizard(); ngarkoPanel(); }
-
-  function shfaq(k) {
+  $('modal').addEventListener('click', e=>{ if(e.target.id==='modal') mbyllModal(); });
+  function shfaq(k){
     $('formHyr').classList.toggle('hide', k!=='hyr');
     $('formReg').classList.toggle('hide', k!=='reg');
     $('tabHyr').classList.toggle('active', k==='hyr');
     $('tabReg').classList.toggle('active', k==='reg');
     $('msg').textContent='';
   }
-  function msg(t, ok) { const m=$('msg'); m.textContent=t; m.className='msg '+(ok?'ok':'err'); }
+  function msg(t,ok){ const m=$('msg'); m.textContent=t; m.className='msg '+(ok?'ok':'err'); }
 
-  // --- AUTH ---
-  async function regjistrohu() {
-    $('btnReg').disabled=true;
-    try {
-      const body = {
-        emri: $('r_emri').value.trim(), email: $('r_email').value.trim(),
-        fjalekalimi: $('r_pass').value, website: $('r_web').value.trim()
-      };
-      const r = await (await fetch('/api/regjistrohu',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
-      if (r.error) { msg(r.error); $('btnReg').disabled=false; return; }
-      mbyllModal(); ngarkoPanel();
-    } catch(e){ msg('Gabim: '+e.message); $('btnReg').disabled=false; }
-  }
-
-  async function hyr() {
+  async function hyr(){
     $('btnHyr').disabled=true;
-    try {
-      const body = { email: $('h_email').value.trim(), fjalekalimi: $('h_pass').value };
-      const r = await (await fetch('/api/hyr',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
-      if (r.error) { msg(r.error); $('btnHyr').disabled=false; return; }
-      mbyllModal(); ngarkoPanel();
-    } catch(e){ msg('Gabim: '+e.message); $('btnHyr').disabled=false; }
+    try{
+      const r=await(await fetch('/api/hyr',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({email:$('h_email').value.trim(),fjalekalimi:$('h_pass').value})})).json();
+      if(r.error){ msg(r.error); $('btnHyr').disabled=false; return; }
+      mbyllModal(); await boot();
+    }catch(e){ msg('Gabim: '+e.message); }
+    $('btnHyr').disabled=false;
+  }
+  async function regjistrohu(){
+    $('btnReg').disabled=true;
+    try{
+      const body={emri:$('r_emri').value.trim(),email:$('r_email').value.trim(),fjalekalimi:$('r_pass').value,website:$('r_web').value.trim()};
+      const r=await(await fetch('/api/regjistrohu',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
+      if(r.error){ msg(r.error); $('btnReg').disabled=false; return; }
+      mbyllModal(); await boot(); openWizard(nextIncomplete());
+    }catch(e){ msg('Gabim: '+e.message); }
+    $('btnReg').disabled=false;
+  }
+  async function dil(){ await fetch('/api/dil',{method:'POST'}); location.reload(); }
+
+  // ---------- PROGRESI ----------
+  async function refreshProg(){ try{ prog = await(await fetch('/api/progres')).json(); }catch(e){ prog={llogaria:true,pershkrimi:false,lidhja:false,reklama:false}; } }
+  function nextIncomplete(){ for(let i=0;i<STEPS.length;i++){ if(!prog[STEPS[i].key]) return i; } return STEPS.length; }
+
+  // ---------- BOOT ----------
+  async function boot(){
+    let r; try{ r=await fetch('/api/une'); }catch(e){ showView('hero'); return; }
+    if(!r.ok){ showView('hero'); return; }
+    une = await r.json();
+    await refreshProg();
+    $('hdrRight').innerHTML='';
+    $('hdrLeft').innerHTML='<button class="btn ghost" onclick="dil()">Log out</button>';
+    renderProfile();
+    showView('profile');
   }
 
-  async function dil() {
-    await fetch('/api/dil',{method:'POST'});
-    location.reload();
+  function renderProfile(){
+    $('p_emri').textContent = une.emri;
+    $('p_email').textContent = une.email;
+    $('p_kat').textContent = une.kategoria_kryesore || une.kategoria || '—';
+    $('p_plan').textContent = une.plani || 'falas';
+    $('p_perm').textContent = une.permbledhje || '—';
+    renderVStep();
   }
 
-  // --- CONNECT FLOW ---
-  function snippetKod(){
-    var o = location.origin, k = (window.__celes||'');
-    return '<script src="'+o+'/imyr.js" data-key="'+k+'"></'+'script>';
+  function renderVStep(){
+    const nx = nextIncomplete();
+    const el = $('vstep'); el.innerHTML='';
+    STEPS.forEach((s,i)=>{
+      const done = prog[s.key];
+      const isCur = (i===nx);
+      const locked = (i>nx);
+      const clickable = done || isCur;
+      const d = document.createElement('div');
+      d.className = 'vs' + (done?' done':'') + (isCur?' cur':'') + (locked?' locked':'') + (clickable?' click':'');
+      d.innerHTML = '<span class="vd">'+(done?'✓':(i+1))+'</span><span class="vl">'+s.label+
+        (isCur?' — vazhdo':'')+(locked?' — i kyçur':'')+'</span>';
+      if(clickable) d.onclick = ()=>openWizard(i);
+      el.appendChild(d);
+    });
   }
 
+  // ---------- WIZARD ----------
+  function startWizard(){ if(une){ openWizard(nextIncomplete()); } else { openWizard(0); } }
+  function closeWizard(){ if(pollTimer){clearInterval(pollTimer);pollTimer=null;} if(une){ boot(); } else { showView('hero'); } }
+
+  function openWizard(i){
+    if(i>=STEPS.length) i=STEPS.length-1;
+    curStep=i; showView('wizard'); renderHStep(); renderStepBody(i);
+  }
+  function renderHStep(){
+    const nx = une ? nextIncomplete() : 0;
+    $('wizStepN').textContent = 'Hapi '+(curStep+1)+' nga '+STEPS.length;
+    const el=$('hstep'); el.innerHTML='';
+    STEPS.forEach((s,i)=>{
+      const done = une && prog[s.key];
+      const cur = (i===curStep);
+      const d=document.createElement('div');
+      d.className='st'+(done?' done':'')+(cur?' cur':'');
+      d.innerHTML='<div class="dot">'+(done?'✓':(i+1))+'</div><div class="lbl">'+s.label+'</div>';
+      el.appendChild(d);
+    });
+  }
+
+  async function advance(){
+    await refreshProg(); renderHStep();
+    const nx = nextIncomplete();
+    if(nx>=STEPS.length){ closeWizard(); return; }
+    openWizard(nx);
+  }
+
+  function renderStepBody(i){
+    const b=$('wizBody');
+    if(i===0) return stepLlogaria(b);
+    if(i===1) return stepPershkrimi(b);
+    if(i===2) return stepLidhja(b);
+    if(i===3) return stepReklama(b);
+  }
+
+  // STEP 0 — Llogaria
+  function stepLlogaria(b){
+    if(une){
+      b.innerHTML='<h2 class="h">Llogaria ✓</h2><p class="small">Llogaria u krijua për <b>'+une.emri+'</b>.</p>'+
+        '<button class="primary" onclick="openWizard(1)">Vazhdo →</button>';
+      return;
+    }
+    b.innerHTML=
+      '<h2 class="h">Krijo llogarinë</h2><p class="small">Fillo me të dhënat bazë.</p>'+
+      '<label>Emri i biznesit</label><input id="a_emri" placeholder="Biznesi im">'+
+      '<label>Email</label><input id="a_email" type="email" placeholder="email@biznesi.com">'+
+      '<label>Fjalëkalimi (min 6)</label><input id="a_pass" type="password" placeholder="••••••">'+
+      '<label>Faqja / linku i SaaS-it</label><input id="a_web" placeholder="https://saasi-im.com">'+
+      '<button class="primary" id="a_btn" onclick="wizKrijo()">Vazhdo →</button><div class="msg" id="a_msg"></div>';
+  }
+  async function wizKrijo(){
+    const emri=$('a_emri').value.trim(),email=$('a_email').value.trim(),pass=$('a_pass').value,web=$('a_web').value.trim();
+    if(!emri||!email||!pass){ $('a_msg').className='msg err'; $('a_msg').textContent='Plotëso emrin, email-in dhe fjalëkalimin.'; return; }
+    if(pass.length<6){ $('a_msg').className='msg err'; $('a_msg').textContent='Fjalëkalimi min 6 shkronja.'; return; }
+    $('a_btn').disabled=true;
+    try{
+      const r=await(await fetch('/api/regjistrohu',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({emri,email,fjalekalimi:pass,website:web})})).json();
+      if(r.error){ $('a_msg').className='msg err'; $('a_msg').textContent=r.error; $('a_btn').disabled=false; return; }
+      une=await(await fetch('/api/une')).json();
+      $('hdrRight').innerHTML=''; $('hdrLeft').innerHTML='<button class="btn ghost" onclick="dil()">Log out</button>';
+      await advance();
+    }catch(e){ $('a_msg').className='msg err'; $('a_msg').textContent='Gabim: '+e.message; $('a_btn').disabled=false; }
+  }
+
+  // STEP 1 — Përshkrimi + AI (i editueshëm)
+  function stepPershkrimi(b){
+    b.innerHTML=
+      '<h2 class="h">Përshkruaj biznesin</h2><p class="small">AI e kupton dhe cakton kategorinë; ti mund ta korrigjosh pastaj.</p>'+
+      '<label>Çfarë ofron biznesi yt?</label>'+
+      '<textarea id="d_persh" placeholder="p.sh. Mjet email-marketing për dyqane të vogla online...">'+(une.pershkrimi||'')+'</textarea>'+
+      '<label class="chk"><input type="checkbox" id="d_lejo" checked><span>Lejo që linku i SaaS-it të studiohet automatikisht për saktësi më të madhe.</span></label>'+
+      '<button class="primary" id="d_btn" onclick="wizAnalizo()">Analizo me AI →</button>'+
+      '<div class="msg" id="d_msg"></div>'+
+      '<div id="d_res" class="hide" style="margin-top:16px;"></div>';
+    if(une.permbledhje){ mbushRezultat(une.kategoria_kryesore, une.nenkategorite, une.permbledhje); }
+  }
+  function mbushRezultat(kk,nk,perm){
+    $('d_res').classList.remove('hide');
+    $('d_res').innerHTML=
+      '<div class="small" style="margin-bottom:6px;color:var(--acc)">Rezultati (i editueshëm):</div>'+
+      '<label>Kategoria kryesore</label><input id="e_kk" value="'+(kk||'').replace(/"/g,"&quot;")+'">'+
+      '<label>Nënkategoritë (ndaji me presje)</label><input id="e_nk" value="'+(nk||'').replace(/"/g,"&quot;")+'">'+
+      '<label>Përmbledhja</label><textarea id="e_perm">'+(perm||'')+'</textarea>'+
+      '<div class="rowbtn"><button class="btn" id="e_save" onclick="ruajPermbledhje()">Ruaj ndryshimet</button>'+
+      '<button class="btn cta" onclick="openWizard(2)">Vazhdo →</button></div>'+
+      '<div class="msg" id="e_msg"></div>';
+  }
+  async function wizAnalizo(){
+    const pershkrimi=$('d_persh').value.trim(), lejo=$('d_lejo').checked;
+    if(!pershkrimi){ $('d_msg').className='msg err'; $('d_msg').textContent='Shkruaj një përshkrim.'; return; }
+    $('d_btn').disabled=true; $('d_msg').className='msg'; $('d_msg').innerHTML='<span class="spin"></span> Imyr po studion biznesin…';
+    try{
+      const r=await(await fetch('/api/analizo',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({pershkrimi,lejo})})).json();
+      $('d_msg').textContent='';
+      if(r.ai){ mbushRezultat(r.kategoria_kryesore, r.nenkategorite, r.permbledhje); }
+      else { mbushRezultat('', '', pershkrimi); $('d_msg').className='msg'; $('d_msg').textContent = r.note||''; }
+      une.pershkrimi=pershkrimi;
+    }catch(e){ $('d_msg').className='msg err'; $('d_msg').textContent='Gabim: '+e.message; }
+    $('d_btn').disabled=false;
+  }
+  async function ruajPermbledhje(){
+    $('e_save').disabled=true;
+    try{
+      const body={kategoria_kryesore:$('e_kk').value.trim(),nenkategorite:$('e_nk').value.trim(),permbledhje:$('e_perm').value.trim()};
+      const r=await(await fetch('/api/permbledhje',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
+      if(r.error){ $('e_msg').className='msg err'; $('e_msg').textContent=r.error; }
+      else { $('e_msg').className='msg ok'; $('e_msg').textContent='U ruajt ✓'; une.kategoria_kryesore=body.kategoria_kryesore; une.nenkategorite=body.nenkategorite; une.permbledhje=body.permbledhje; }
+    }catch(e){ $('e_msg').className='msg err'; $('e_msg').textContent='Gabim: '+e.message; }
+    $('e_save').disabled=false;
+  }
+
+  // STEP 2 — Lidhja (snippet një-rresht)
+  function snippetKod(){ return '<script src="'+location.origin+'/imyr.js" data-key="'+(une.celes||'')+'"></'+'script>'; }
+  function stepLidhja(b){
+    b.innerHTML=
+      '<h2 class="h">Lidh Imyr-in te faqja jote</h2>'+
+      '<p class="small">Kopjo këtë rresht dhe vendose kudo te faqja jote (p.sh. te footer-i).</p>'+
+      '<textarea class="kod" id="kodBox" readonly>'+snippetKod().replace(/</g,'&lt;')+'</textarea>'+
+      '<div class="rowbtn"><button class="btn cta" id="cbtn" onclick="kopjo()">Kopjo</button></div>'+
+      '<div id="afterCopy" class="hide">'+
+        '<div class="small" style="margin-top:12px;">Pasi ta ruash te faqja jote, shkruaj URL-në ku e vendose dhe hape për të konfirmuar lidhjen.</div>'+
+        '<label>URL-ja e faqes</label><input id="hapUrl" value="'+((une.website||'')).replace(/"/g,"&quot;")+'" placeholder="https://faqja-ime.com">'+
+        '<button class="primary" id="hbtn" onclick="hapDheVerifiko()">Hap faqen dhe konfirmo →</button>'+
+        '<div class="status wait hide" id="statusLine"></div>'+
+      '</div>';
+    if(prog.lidhja){
+      $('afterCopy').classList.remove('hide');
+      $('statusLine').classList.remove('hide'); $('statusLine').textContent='✓ E lidhur.';
+    }
+  }
+  function kopjo(){
+    const t=$('kodBox'); t.select(); t.setSelectionRange(0,99999);
+    try{document.execCommand('copy');}catch(e){}
+    $('cbtn').textContent='U kopjua ✓'; setTimeout(()=>$('cbtn').textContent='Kopjo',1500);
+    $('afterCopy').classList.remove('hide');
+  }
   function hapDheVerifiko(){
-    var url = ($('hapUrl').value || '').trim();
-    if(!url){ $('hapUrl').focus(); return; }
-    if(!/^https?:\/\//i.test(url)) url = 'https://' + url;
-    window.open(url, '_blank');                 // hapja e faqes → tag-u firon → /lidh
-    $('statusLine').classList.remove('hide');
-    $('statusLine').innerHTML = '⏳ E hapa faqen… po pres sinjalin e tag-ut. Sapo të firojë, kalon vetë te suksesi.';
+    let url=($('hapUrl').value||'').trim(); if(!url){ $('hapUrl').focus(); return; }
+    if(!/^https?:\/\//i.test(url)) url='https://'+url;
+    window.open(url,'_blank');
+    $('statusLine').classList.remove('hide'); $('statusLine').innerHTML='⏳ Po pres sinjalin e lidhjes…';
     startPolling();
   }
-
-  function trregoInput(){
-    $('stepInput').classList.remove('hide');
-    $('stepCode').classList.add('hide');
-    $('stepSuccess').classList.add('hide');
-  }
-  function trregoKod(){
-    $('stepInput').classList.add('hide');
-    $('stepCode').classList.remove('hide');
-    $('stepSuccess').classList.add('hide');
-    $('kodBox').value = snippetKod();
-    if ($('hapUrl') && !$('hapUrl').value) $('hapUrl').value = window.__website || '';
-    $('afterCopy').classList.add('hide');       // fillimisht: vetem kodi + Kopjo
-    $('statusLine').classList.add('hide');
-  }
-  function trregoSukses(st){
-    // NUK e ndalojme polling-un — vazhdon te freskoje badge-in "live".
-    $('stepInput').classList.add('hide');
-    $('stepCode').classList.add('hide');
-    $('stepSuccess').classList.remove('hide');
-    $('okOrigin').textContent = st && st.origjina ? st.origjina : '';
-    perditesoBadge(st);
-  }
-
-  function perditesoBadge(st){
-    const el = $('liveBadge'); if(!el) return;
-    if (st && st.live) { el.textContent = '🟢 Aktiv tani — po merr shikime'; el.style.color = 'var(--good)'; }
-    else { el.textContent = '✓ I instaluar (ende pa vizitorë tani)'; el.style.color = 'var(--mut)'; }
-  }
-
-  async function gjenero(){
-    const t = $('promoText').value.trim();
-    if(!t){ $('promoText').focus(); return; }
-    $('btnGjenero').disabled = true;
-    try {
-      const r = await (await fetch('/api/promovimi',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({teksti:t})})).json();
-      if (r.error) { alert(r.error); $('btnGjenero').disabled=false; return; }
-      trregoKod();
-      startPolling();
-    } catch(e){ alert('Gabim: '+e.message); }
-    $('btnGjenero').disabled = false;
-  }
-
-  function ndrysho(){
-    if (pollTimer) { clearInterval(pollTimer); pollTimer=null; }
-    trregoInput();
-  }
-
-  function kopjo(){
-    const b=$('kodBox'); b.select(); b.setSelectionRange(0,99999);
-    try { document.execCommand('copy'); } catch(e){}
-    $('copyBtn').textContent='U kopjua ✓';
-    setTimeout(()=>{ $('copyBtn').textContent='Kopjo'; }, 1500);
-    $('afterCopy').classList.remove('hide');     // shfaq butonin e webit + udhezimin
-  }
-
-  async function njeKontroll(){
-    try {
-      const st = await (await fetch('/api/kontrollo')).json();
-      if (st.active) { trregoSukses(st); return; }
-    } catch(e){}
-  }
-
   function startPolling(){
-    if (pollTimer) clearInterval(pollTimer);
-    njeKontroll();                              // kontroll i menjehershem
-    pollTimer = setInterval(njeKontroll, 6000); // pastaj cdo 6s
+    if(pollTimer) clearInterval(pollTimer);
+    const tick=async()=>{ try{ const st=await(await fetch('/api/kontrollo')).json();
+      if(st.active){ clearInterval(pollTimer); pollTimer=null; $('statusLine').className='status'; $('statusLine').innerHTML='✓ U lidh me sukses!';
+        await refreshProg(); renderHStep(); setTimeout(()=>openWizard(3),900); } }catch(e){} };
+    tick(); pollTimer=setInterval(tick,6000);
   }
 
-  // Enter te textarea → gjenero (pa shift)
-  $('promoText').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); gjenero(); }
-  });
-
-  // --- INIT ---
-  async function ngarkoPanel() {
-    let r;
-    try { r = await fetch('/api/une'); } catch(e){ return; }
-    if (!r.ok) return; // s'eshte i loguar → mbetet hero + butonat
-    const u = await r.json();
-    window.__celes = u.celes;
-    window.__website = u.website || '';
-
-    // Header: hiq butonat djathtas, shto Log out majtas
-    $('hdrRight').innerHTML = '';
-    $('hdrLeft').innerHTML = '<button class="btn ghost" onclick="dil()">Log out</button>';
-
-    // Fshih hero, shfaq connect
-    $('hero').classList.add('hide');
-    mbyllModal();
-    $('connect').classList.remove('hide');
-    $('c_emri').textContent = u.emri;
-
-    // Kontrollo gjendjen
-    try {
-      const st = await (await fetch('/api/status')).json();
-      if (st.teksti) $('promoText').value = st.teksti;
-      if (st.active) { trregoSukses(st); startPolling(); }
-      else if (st.teksti) { trregoKod(); startPolling(); }
-      else { trregoInput(); }
-    } catch(e){ trregoInput(); }
+  // STEP 3 — Reklama (tekst tani; video/ngarkim më vonë)
+  function stepReklama(b){
+    b.innerHTML=
+      '<h2 class="h">Krijo reklamën</h2>'+
+      '<p class="small">Për tani, një reklamë me tekst. Së shpejti: ngarkim imazhi/videoje dhe gjenerim me AI.</p>'+
+      '<label>Teksti i reklamës që do të shfaqet te të tjerët</label>'+
+      '<textarea id="ad_txt" placeholder="p.sh. Provo mjetin tonë falas për 14 ditë!"></textarea>'+
+      '<button class="primary" id="ad_btn" onclick="ruajReklame()">Ruaj reklamën →</button>'+
+      '<div class="msg" id="ad_msg"></div>';
+  }
+  async function ruajReklame(){
+    const t=$('ad_txt').value.trim(); if(!t){ $('ad_msg').className='msg err'; $('ad_msg').textContent='Shkruaj tekstin.'; return; }
+    $('ad_btn').disabled=true;
+    try{
+      const r=await(await fetch('/api/promovimi',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({teksti:t})})).json();
+      if(r.error){ $('ad_msg').className='msg err'; $('ad_msg').textContent=r.error; $('ad_btn').disabled=false; return; }
+      $('ad_msg').className='msg ok'; $('ad_msg').textContent='U ruajt ✓';
+      await refreshProg(); renderHStep(); setTimeout(closeWizard,900);
+    }catch(e){ $('ad_msg').className='msg err'; $('ad_msg').textContent='Gabim: '+e.message; $('ad_btn').disabled=false; }
   }
 
-  ngarkoPanel();
+  boot();
 </script>
 </body>
 </html>

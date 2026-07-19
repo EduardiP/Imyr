@@ -192,15 +192,11 @@ app.get('/api/progres', iLoguar, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- RUAJ PERMBLEDHJEN (klienti e editon rezultatin e AI) ---
+// --- RUAJ PERMBLEDHJEN (klienti editon vetem permbledhjen; kategoria mbetet nga AI) ---
 app.post('/api/permbledhje', iLoguar, async (req, res) => {
-  const kk = (req.body.kategoria_kryesore || '').trim() || null;
-  const nk = (req.body.nenkategorite || '').trim() || null;
   const perm = (req.body.permbledhje || '').trim() || null;
   try {
-    await pool.query(
-      'UPDATE bizneset SET kategoria_kryesore=$2, nenkategorite=$3, permbledhje=$4, kategoria=$2 WHERE id=$1',
-      [req.biznesId, kk, nk, perm]);
+    await pool.query('UPDATE bizneset SET permbledhje=$2 WHERE id=$1', [req.biznesId, perm]);
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -620,7 +616,8 @@ app.post('/api/analizo', iLoguar, async (req, res) => {
 });
 
 // --- Faqet ---
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/test', (req, res) => res.sendFile(path.join(__dirname, 'index-test-saas.html')));
 
 // health check

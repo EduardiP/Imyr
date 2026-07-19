@@ -58,6 +58,20 @@
   .small { font-size:13px; color:var(--mut); }
   .rowbtn { display:flex; gap:8px; margin-top:10px; }
   .rowbtn .btn { flex:1; text-align:center; }
+
+  /* WIZARD */
+  .wizcard { width:100%; max-width:460px; }
+  .prog { height:6px; background:var(--line); border-radius:4px; overflow:hidden; margin:2px 0 6px; }
+  .prog > div { height:100%; background:var(--acc); width:33%; transition:width .3s; }
+  .stepn { font-size:12px; color:var(--mut); letter-spacing:.05em; text-transform:uppercase; margin-bottom:14px; }
+  .wizh { font-size:19px; margin:0 0 4px; }
+  .wizsub { color:var(--mut); font-size:13px; margin:0 0 12px; }
+  .chk { display:flex; gap:10px; align-items:flex-start; margin-top:12px; font-size:13px; color:var(--txt); cursor:pointer; }
+  .chk input { width:auto; margin-top:3px; }
+  .aibox { background:#0e1116; border:1px solid var(--line); border-radius:10px; padding:14px; margin-top:6px; }
+  .aibox .tag { display:inline-block; background:#1a1205; color:var(--acc); border:1px solid #4a3d1e; border-radius:6px; padding:3px 9px; font-size:12px; margin:3px 4px 0 0; }
+  .spin { display:inline-block; width:16px; height:16px; border:2px solid var(--line); border-top-color:var(--acc); border-radius:50%; animation:sp 0.8s linear infinite; vertical-align:middle; }
+  @keyframes sp { to { transform:rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -68,7 +82,7 @@
   <div class="logo">IMYR</div>
   <div class="side right" id="hdrRight">
     <button class="btn" onclick="hapModal('hyr')">Log in</button>
-    <button class="btn cta" onclick="hapModal('reg')">Try for free</button>
+    <button class="btn cta" onclick="hapWizard()">Try for free</button>
   </div>
 </header>
 
@@ -78,7 +92,7 @@
   <div class="hero" id="hero">
     <h1>IMYR</h1>
     <p>Rrjeti ku bizneset promovojnë njëri-tjetrin</p>
-    <button class="btn cta" onclick="hapModal('reg')">Provo falas</button>
+    <button class="btn cta" onclick="hapWizard()">Provo falas</button>
   </div>
 
   <!-- CONNECT (pas login) -->
@@ -156,8 +170,6 @@
       <input id="r_email" type="email" placeholder="email@biznesi.com">
       <label>Fjalëkalimi (min 6 shkronja)</label>
       <input id="r_pass" type="password" placeholder="••••••">
-      <label>Kategoria</label>
-      <input id="r_kat" placeholder="p.sh. mjete marketingu, e-commerce...">
       <label>Faqja (website)</label>
       <input id="r_web" placeholder="https://biznesi.com">
       <button class="primary" id="btnReg" onclick="regjistrohu()">Krijo llogari</button>
@@ -167,14 +179,124 @@
   </div>
 </div>
 
+<!-- WIZARD (Provo falas) -->
+<div class="backdrop hide" id="wizard">
+  <div class="card wizcard">
+    <button class="x" onclick="mbyllWizard()" style="float:right;background:none;border:none;color:var(--mut);font-size:20px;cursor:pointer;line-height:1;">✕</button>
+    <div class="prog"><div id="progBar"></div></div>
+    <div class="stepn" id="stepN">Hapi 1 nga 3</div>
+
+    <!-- HAPI 1: Krijo llogari -->
+    <div id="wz1">
+      <h2 class="wizh">Krijo llogarinë</h2>
+      <p class="wizsub">Fillo me të dhënat bazë të biznesit tënd.</p>
+      <label>Emri i biznesit</label>
+      <input id="w_emri" placeholder="Biznesi im">
+      <label>Email</label>
+      <input id="w_email" type="email" placeholder="email@biznesi.com">
+      <label>Fjalëkalimi (min 6 shkronja)</label>
+      <input id="w_pass" type="password" placeholder="••••••">
+      <label>Faqja / linku i SaaS-it</label>
+      <input id="w_web" placeholder="https://saasi-im.com">
+      <button class="primary" id="wBtn1" onclick="wizKrijo()">Vazhdo →</button>
+      <div class="msg" id="wMsg1"></div>
+    </div>
+
+    <!-- HAPI 2: Përshkrimi + leje analize -->
+    <div id="wz2" class="hide">
+      <h2 class="wizh">Përshkruaj biznesin</h2>
+      <p class="wizsub">Sa më e qartë, aq më mirë e gjen algoritmi partnerin e duhur.</p>
+      <label>Çfarë ofron biznesi yt?</label>
+      <textarea id="w_pershkrim" placeholder="p.sh. Mjet email-marketing për dyqane të vogla online..."></textarea>
+      <label class="chk">
+        <input type="checkbox" id="w_lejo" checked>
+        <span>Lejo që linku i SaaS-it që dhashë të studiohet automatikisht, që analiza të jetë më e saktë.</span>
+      </label>
+      <button class="primary" id="wBtn2" onclick="wizAnalizo()">Analizo dhe vazhdo →</button>
+      <div class="msg" id="wMsg2"></div>
+    </div>
+
+    <!-- HAPI 3: Rezultati AI -->
+    <div id="wz3" class="hide">
+      <h2 class="wizh">Gati! 🎉</h2>
+      <p class="wizsub">Ja si e kuptoi Imyr biznesin tënd:</p>
+      <div class="aibox" id="wResult"></div>
+      <button class="primary" onclick="wizPerfundo()">Shko te profili im →</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const $ = id => document.getElementById(id);
   let pollTimer = null;
+  let wizStep = 1;
 
   // --- MODAL ---
   function hapModal(k){ $('modal').classList.remove('hide'); shfaq(k); }
   function mbyllModal(){ $('modal').classList.add('hide'); $('msg').textContent=''; }
   $('modal').addEventListener('click', e => { if(e.target.id==='modal') mbyllModal(); });
+
+  // --- WIZARD ---
+  function hapWizard(){ wizStep=1; wizGo(1); $('wizard').classList.remove('hide'); }
+  function mbyllWizard(){ $('wizard').classList.add('hide'); }
+  $('wizard').addEventListener('click', e => { if(e.target.id==='wizard') mbyllWizard(); });
+
+  function wizGo(n){
+    wizStep = n;
+    $('wz1').classList.toggle('hide', n!==1);
+    $('wz2').classList.toggle('hide', n!==2);
+    $('wz3').classList.toggle('hide', n!==3);
+    $('progBar').style.width = (n*33.33) + '%';
+    $('stepN').textContent = 'Hapi ' + n + ' nga 3';
+  }
+
+  async function wizKrijo(){
+    const emri=$('w_emri').value.trim(), email=$('w_email').value.trim(),
+          pass=$('w_pass').value, web=$('w_web').value.trim();
+    if(!emri||!email||!pass){ $('wMsg1').className='msg err'; $('wMsg1').textContent='Plotëso emrin, email-in dhe fjalëkalimin.'; return; }
+    if(pass.length<6){ $('wMsg1').className='msg err'; $('wMsg1').textContent='Fjalëkalimi min 6 shkronja.'; return; }
+    $('wBtn1').disabled=true; $('wMsg1').textContent='';
+    try{
+      const r = await (await fetch('/api/regjistrohu',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({emri,email,fjalekalimi:pass,website:web})})).json();
+      if(r.error){ $('wMsg1').className='msg err'; $('wMsg1').textContent=r.error; $('wBtn1').disabled=false; return; }
+      wizGo(2);
+    }catch(e){ $('wMsg1').className='msg err'; $('wMsg1').textContent='Gabim: '+e.message; }
+    $('wBtn1').disabled=false;
+  }
+
+  async function wizAnalizo(){
+    const pershkrimi=$('w_pershkrim').value.trim(), lejo=$('w_lejo').checked;
+    if(!pershkrimi){ $('wMsg2').className='msg err'; $('wMsg2').textContent='Shkruaj një përshkrim të shkurtër.'; return; }
+    $('wBtn2').disabled=true;
+    $('wMsg2').className='msg'; $('wMsg2').innerHTML='<span class="spin"></span> Imyr po studion biznesin…';
+    try{
+      const r = await (await fetch('/api/analizo',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({pershkrimi,lejo})})).json();
+      if(r.error){ $('wMsg2').className='msg err'; $('wMsg2').textContent=r.error; $('wBtn2').disabled=false; return; }
+      // ndërto rezultatin
+      let html='';
+      if(r.ai){
+        html += '<div class="small" style="color:var(--mut)">Kategoria kryesore</div>';
+        html += '<div style="font-weight:600;margin-bottom:8px;">'+(r.kategoria_kryesore||'—')+'</div>';
+        if(r.nenkategorite){
+          html += '<div class="small" style="color:var(--mut)">Nënkategori</div><div style="margin-bottom:8px;">';
+          html += (r.nenkategorite.split(',').map(s=>'<span class="tag">'+s.trim()+'</span>').join(''));
+          html += '</div>';
+        }
+        if(r.permbledhje){
+          html += '<div class="small" style="color:var(--mut)">Përmbledhja</div><div style="font-size:14px;">'+r.permbledhje+'</div>';
+        }
+      } else {
+        html += '<div style="font-size:14px;">Përshkrimi u ruajt. '+(r.note||'Kategorizimi me AI do të bëhet së shpejti.')+'</div>';
+      }
+      $('wResult').innerHTML = html;
+      wizGo(3);
+    }catch(e){ $('wMsg2').className='msg err'; $('wMsg2').textContent='Gabim: '+e.message; }
+    $('wBtn2').disabled=false;
+  }
+
+  function wizPerfundo(){ mbyllWizard(); ngarkoPanel(); }
 
   function shfaq(k) {
     $('formHyr').classList.toggle('hide', k!=='hyr');
@@ -191,7 +313,7 @@
     try {
       const body = {
         emri: $('r_emri').value.trim(), email: $('r_email').value.trim(),
-        fjalekalimi: $('r_pass').value, kategoria: $('r_kat').value.trim(), website: $('r_web').value.trim()
+        fjalekalimi: $('r_pass').value, website: $('r_web').value.trim()
       };
       const r = await (await fetch('/api/regjistrohu',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
       if (r.error) { msg(r.error); $('btnReg').disabled=false; return; }

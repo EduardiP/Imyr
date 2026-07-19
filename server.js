@@ -64,6 +64,12 @@ async function initDB() {
   await pool.query(`ALTER TABLE bizneset ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE bizneset ADD COLUMN IF NOT EXISTS origjina TEXT`);
   await pool.query(`ALTER TABLE bizneset ADD COLUMN IF NOT EXISTS kandidat_url TEXT`);
+  // Analiza AI (kategorizimi + permbledhja per algoritmin)
+  await pool.query(`ALTER TABLE bizneset ADD COLUMN IF NOT EXISTS pershkrimi TEXT`);
+  await pool.query(`ALTER TABLE bizneset ADD COLUMN IF NOT EXISTS lejo_analize BOOLEAN DEFAULT false`);
+  await pool.query(`ALTER TABLE bizneset ADD COLUMN IF NOT EXISTS kategoria_kryesore TEXT`);
+  await pool.query(`ALTER TABLE bizneset ADD COLUMN IF NOT EXISTS nenkategorite TEXT`);
+  await pool.query(`ALTER TABLE bizneset ADD COLUMN IF NOT EXISTS permbledhje TEXT`);
 
   // Ngjarjet (shfaqje/klikime) — per gjurmimin
   await pool.query(`
@@ -496,6 +502,90 @@ app.get('/track', async (req, res) => {
     }
   } catch (e) {}
   res.status(204).end();
+});
+
+// --- Ndihmes: pastro HTML-in ne tekst te thjeshte ---
+function pastroHtml(html) {
+  return (html || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Kategorite kryesore (korniza; AI zgjedh SAKTESISHT nje prej tyre)
+const KATEGORITE = [
+  'Marketing & Growth', 'Sales & CRM', 'Finance & Accounting', 'HR & Recruiting',
+  'Productivity & Collaboration', 'Developer Tools & Infrastructure', 'Design & Creative',
+  'Customer Support & Success', 'Analytics & Data', 'E-commerce Tools',
+  'Security & Compliance', 'AI/ML Tools'
+];
+
+// --- ANALIZO (AI): kategori kryesore + nenkategori + permbledhje per algoritmin ---
+app.post('/api/analizo', iLoguar, async (req, res) => {
+  const pershkrimi = (req.body.pershkrimi || '').trim();
+  const lejo = !!req.body.lejo;
+  try {
+    await pool.query('UPDATE bizneset SET pershkrimi=$2, lejo_analize=$3 WHERE id=$1',
+      [req.biznesId, pershkrimi || null, lejo]);
+
+    // nese lejohet, merr tekstin e faqes se biznesit
+    let webTekst = '';
+    if (lejo) {
+      const b = await pool.query('SELECT website FROM bizneset WHERE id=$1', [req.biznesId]);
+      let url = (b.rows[0] && b.rows[0].website || '').trim();
+      if (url) {
+        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+        try { const f = await merrFaqen(url); webTekst = pastroHtml(f.body).slice(0, 4000); } catch (e) {}
+      }
+    }
+
+    const key = process.env.OPENAI_API_KEY;
+    if (!key) {
+      // Pa AI: ruaj pershkrimin, kthe njoftim (kategorizimi behet me vone)
+      return res.json({ ok: true, ai: false, note: "AI s'është konfiguruar ende (mungon OPENAI_API_KEY)." });
+    }
+
+    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+    const sys = 'Je analist qe klasifikon biznese SaaS per nje rrjet cross-promotion. Kthe VETEM JSON, pa asnje tekst tjeter.';
+    const user =
+      'Zgjidh SAKTESISHT nje kategori kryesore nga kjo liste: ' + KATEGORITE.join('; ') + '.\n\n' +
+      'Pershkrimi i dhene nga biznesi: ' + (pershkrimi || '(pa pershkrim)') + '\n\n' +
+      (webTekst ? ('Teksti i nxjerre nga faqja e biznesit:\n' + webTekst + '\n\n') : '') +
+      'Kthe JSON me keto fusha:\n' +
+      '{"kategoria_kryesore": string (SAKTESISHT nje nga lista), ' +
+      '"nenkategorite": string[] (2-4 nenkategori specifike), ' +
+      '"permbledhje": string (1-3 fjali te qarta qe tregojne cfare ofron biznesi dhe audiencen e tij, ' +
+      'te shkruara ashtu qe nje algoritem te gjeje me cilat sherbime plotesuese (jo konkurrente) mund te cohet)}';
+
+    let parsed = {};
+    try {
+      const r = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+        body: JSON.stringify({
+          model, temperature: 0, response_format: { type: 'json_object' },
+          messages: [{ role: 'system', content: sys }, { role: 'user', content: user }]
+        })
+      });
+      const data = await r.json();
+      if (data.error) return res.json({ ok: true, ai: false, note: 'AI: ' + data.error.message });
+      parsed = JSON.parse(data.choices[0].message.content);
+    } catch (e) {
+      return res.json({ ok: true, ai: false, note: 'Analiza AI dështoi: ' + e.message });
+    }
+
+    const kk = parsed.kategoria_kryesore || null;
+    const nk = Array.isArray(parsed.nenkategorite) ? parsed.nenkategorite.join(', ') : (parsed.nenkategorite || null);
+    const perm = parsed.permbledhje || null;
+
+    await pool.query(
+      'UPDATE bizneset SET kategoria_kryesore=$2, nenkategorite=$3, permbledhje=$4, kategoria=$2 WHERE id=$1',
+      [req.biznesId, kk, nk, perm]);
+
+    res.json({ ok: true, ai: true, kategoria_kryesore: kk, nenkategorite: nk, permbledhje: perm });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // --- Faqet ---

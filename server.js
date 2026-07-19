@@ -169,8 +169,39 @@ app.post('/api/dil', async (req, res) => {
 app.get('/api/une', iLoguar, async (req, res) => {
   try {
     const r = await pool.query(
-      'SELECT id, emri, email, kategoria, plani, website, celes FROM bizneset WHERE id=$1', [req.biznesId]);
+      `SELECT id, emri, email, kategoria, plani, website, celes,
+              kategoria_kryesore, nenkategorite, permbledhje, pershkrimi
+       FROM bizneset WHERE id=$1`, [req.biznesId]);
     res.json(r.rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// --- PROGRESI (cilat hapa jane plotesuar) ---
+app.get('/api/progres', iLoguar, async (req, res) => {
+  try {
+    const b = await pool.query(
+      'SELECT permbledhje, pershkrimi, snippet_active FROM bizneset WHERE id=$1', [req.biznesId]);
+    const p = await pool.query('SELECT 1 FROM promovimet WHERE biznes_id=$1 AND aktiv=true LIMIT 1', [req.biznesId]);
+    const row = b.rows[0] || {};
+    res.json({
+      llogaria: true,                                   // i loguar => llogaria gati
+      pershkrimi: !!(row.permbledhje || row.pershkrimi),// pershkrimi/AI u dha
+      lidhja: !!row.snippet_active,                     // snippet-i u lidh
+      reklama: p.rows.length > 0                         // reklama u krijua
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// --- RUAJ PERMBLEDHJEN (klienti e editon rezultatin e AI) ---
+app.post('/api/permbledhje', iLoguar, async (req, res) => {
+  const kk = (req.body.kategoria_kryesore || '').trim() || null;
+  const nk = (req.body.nenkategorite || '').trim() || null;
+  const perm = (req.body.permbledhje || '').trim() || null;
+  try {
+    await pool.query(
+      'UPDATE bizneset SET kategoria_kryesore=$2, nenkategorite=$3, permbledhje=$4, kategoria=$2 WHERE id=$1',
+      [req.biznesId, kk, nk, perm]);
+    res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

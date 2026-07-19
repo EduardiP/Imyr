@@ -88,6 +88,19 @@
   .row .k { color:var(--mut); }
   .celes { font-family:monospace; font-size:12px; color:var(--acc); word-break:break-all; }
   h2.h { font-size:20px; margin:0 0 4px; }
+
+  /* DASHBOARD LAYOUT */
+  .appwrap { display:flex; align-items:stretch; min-height:calc(100vh - 58px); }
+  .sidebar { width:250px; flex:0 0 auto; border-right:1px solid var(--line); padding:20px 14px; }
+  .main { flex:1; padding:26px 30px; min-width:0; }
+  .pcard { padding:4px 8px 16px; border-bottom:1px solid var(--line); margin-bottom:12px; }
+  .pname { font-size:17px; font-weight:600; }
+  .pmail { font-size:12px; color:var(--mut); }
+  .pcat { font-size:12px; color:var(--acc); margin-top:4px; }
+  .snav button { display:block; width:100%; text-align:left; background:none; border:none; color:var(--txt); padding:10px; border-radius:8px; cursor:pointer; font-size:14px; margin-bottom:2px; }
+  .snav button:hover { background:#0e1116; }
+  .snav button.active { background:#0e1116; color:var(--acc); }
+  @media (max-width:700px){ .appwrap{ flex-direction:column; } .sidebar{ width:auto; border-right:none; border-bottom:1px solid var(--line); } }
 </style>
 </head>
 <body>
@@ -121,21 +134,18 @@
   <div id="wizBody"></div>
 </div>
 
-<!-- PROFILE -->
-<div class="wrap view" id="v-profile">
-  <div class="card" style="margin-bottom:16px;">
-    <h2 class="h" id="p_emri"></h2>
-    <div class="row"><span class="k">Email</span><span id="p_email"></span></div>
-    <div class="row"><span class="k">Kategoria</span><span id="p_kat"></span></div>
-    <div class="row"><span class="k">Plani</span><span id="p_plan"></span></div>
-    <div style="margin-top:12px;">
-      <div class="small">Përmbledhja (për algoritmin):</div>
-      <div id="p_perm" style="font-size:14px;"></div>
-    </div>
-  </div>
-  <div class="card">
-    <p class="dashttl">Dashboard — hapat e konfigurimit</p>
-    <div class="vstep" id="vstep"></div>
+<!-- PROFILE / DASHBOARD -->
+<div class="view" id="v-profile">
+  <div class="appwrap">
+    <aside class="sidebar">
+      <div class="pcard">
+        <div class="pname" id="p_emri"></div>
+        <div class="pmail" id="p_email"></div>
+        <div class="pcat" id="p_kat"></div>
+      </div>
+      <nav class="snav" id="snav"></nav>
+    </aside>
+    <main class="main" id="mainPanel"></main>
   </div>
 </div>
 
@@ -251,13 +261,52 @@
     applyState(history.state, true);
   }
 
+  let curNav = 'dashboard';
+  const NAV = [
+    { k:'dashboard', l:'Dashboard' },
+    { k:'reklamat',  l:'Krijimet e reklamave' },
+    { k:'analytics', l:'Analytics' }
+  ];
+
   function renderProfile(){
     $('p_emri').textContent = une.emri;
     $('p_email').textContent = une.email;
-    $('p_kat').textContent = une.kategoria_kryesore || une.kategoria || '—';
-    $('p_plan').textContent = une.plani || 'falas';
-    $('p_perm').textContent = une.permbledhje || '—';
+    $('p_kat').textContent = une.kategoria_kryesore || une.kategoria || '';
+    renderNav();
+    renderMain();
+  }
+  function renderNav(){
+    const el=$('snav'); el.innerHTML='';
+    NAV.forEach(n=>{
+      const b=document.createElement('button');
+      b.textContent=n.l; if(n.k===curNav) b.className='active';
+      b.onclick=()=>{ curNav=n.k; renderNav(); renderMain(); };
+      el.appendChild(b);
+    });
+  }
+  function renderMain(){
+    const m=$('mainPanel');
+    if(curNav==='dashboard') return mainDashboard(m);
+    if(curNav==='reklamat')  return mainReklamat(m);
+    if(curNav==='analytics') return mainAnalytics(m);
+  }
+  function mainDashboard(m){
+    m.innerHTML='<h2 class="h">Hapat e konfigurimit</h2>'+
+      '<p class="small" style="margin:2px 0 18px;">Përfundo hapat për ta aktivizuar plotësisht Imyr.</p>'+
+      '<div class="vstep" id="vstep" style="max-width:460px;"></div>';
     renderVStep();
+  }
+  function mainReklamat(m){
+    m.innerHTML='<h2 class="h">Krijimet e reklamave</h2>'+
+      '<p class="small" id="rk_txt" style="margin:10px 0 16px;">…</p>'+
+      '<button class="btn cta" onclick="openWizard(3)">Krijo / ndrysho reklamën</button>';
+    fetch('/api/status').then(r=>r.json()).then(st=>{
+      $('rk_txt').textContent = st.teksti ? ('Reklama aktuale: “'+st.teksti+'”') : "Ende s'ke krijuar reklamë.";
+    }).catch(()=>{});
+  }
+  function mainAnalytics(m){
+    m.innerHTML='<h2 class="h">Analytics</h2>'+
+      '<p class="small" style="margin-top:10px;">Së shpejti: shikime, klikime dhe konvertime për reklamën tënde.</p>';
   }
 
   function renderVStep(){
